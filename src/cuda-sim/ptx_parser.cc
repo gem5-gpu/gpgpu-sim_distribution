@@ -30,7 +30,12 @@
 #include "ptx.tab.h"
 #include <stdarg.h>
 
-extern int ptx_error( const char *s );
+#include "../gpgpu-sim/gpu-sim.h"
+#include "gpu/gpgpu-sim/cuda_gpu.hh"
+
+extern gpgpu_sim *g_the_gpu;
+
+extern "C" int ptx_error( const char *s );
 extern int ptx_lineno;
 
 static const struct core_config *g_shader_core_config;
@@ -93,14 +98,14 @@ const char *decode_token( int type )
    return g_ptx_token_decode[type].c_str();
 }
 
-void read_parser_environment_variables() 
+void read_parser_environment_variables()
 {
-   g_filename = getenv("PTX_SIM_KERNELFILE"); 
+   g_filename = getenv("PTX_SIM_KERNELFILE");
    char *dbg_level = getenv("PTX_SIM_DEBUG");
    if ( dbg_level && strlen(dbg_level) ) {
       int debug_execution=0;
       sscanf(dbg_level,"%d", &debug_execution);
-      if ( debug_execution >= 30 ) 
+      if ( debug_execution >= 30 )
          g_debug_ir_generation=true;
    }
 }
@@ -154,7 +159,7 @@ void init_instruction_state()
 
 static int g_entry_point;
 
-void start_function( int entry_point ) 
+void start_function( int entry_point )
 {
    PTX_PARSE_DPRINTF("start_function");
    init_directive_state();
@@ -168,7 +173,7 @@ char *g_add_identifier_cached__identifier = NULL;
 int g_add_identifier_cached__array_dim;
 int g_add_identifier_cached__array_ident;
 
-void add_function_name( const char *name ) 
+void add_function_name( const char *name )
 {
    PTX_PARSE_DPRINTF("add_function_name %s %s", name,  ((g_entry_point==1)?"(entrypoint)":((g_entry_point==2)?"(extern)":"")));
    bool prior_decl = g_global_symbol_table->add_function_decl( name, g_entry_point, &g_func_info, &g_current_symbol_table );
@@ -187,7 +192,7 @@ void add_function_name( const char *name )
    g_global_symbol_table->add_function( g_func_info, g_filename, ptx_lineno );
 }
 
-void add_directive() 
+void add_directive()
 {
    PTX_PARSE_DPRINTF("add_directive");
    init_directive_state();
@@ -340,7 +345,7 @@ int pad_address (new_addr_type address, unsigned size, unsigned maxalign) {
     return alignto ? ((alignto - (address % alignto)) % alignto) : 0;
 }
 
-void add_identifier( const char *identifier, int array_dim, unsigned array_ident ) 
+void add_identifier( const char *identifier, int array_dim, unsigned array_ident )
 {
    if( g_func_decl && (g_func_info == NULL) ) {
       // return variable decl...
@@ -423,7 +428,7 @@ void add_identifier( const char *identifier, int array_dim, unsigned array_ident
                 identifier);
          fflush(stdout);
          assert( (num_bits%8) == 0  ); 
-         addr = g_current_symbol_table->get_global_next();
+         addr = 0xDEADBEEF;
          addr_pad = pad_address(addr, num_bits/8, 128);
          printf("from 0x%x to 0x%lx (global memory space) %u\n",
               addr+addr_pad,
@@ -431,7 +436,7 @@ void add_identifier( const char *identifier, int array_dim, unsigned array_ident
               g_const_alloc++);
          fflush(stdout);
          g_last_symbol->set_address( addr + addr_pad );
-         g_current_symbol_table->alloc_global( num_bits/8 + addr_pad ); 
+         // Do not alloc in gem5-gpu: g_current_symbol_table->alloc_global( num_bits/8 + addr_pad );
       }
       if( g_current_symbol_table == g_global_symbol_table ) { 
          g_constants.insert( identifier ); 
@@ -444,19 +449,20 @@ void add_identifier( const char *identifier, int array_dim, unsigned array_ident
              identifier);
       fflush(stdout);
       assert( (num_bits%8) == 0  );
-      addr = g_current_symbol_table->get_global_next();
+      addr = 0xDEADBEEF;
       addr_pad = pad_address(addr, num_bits/8, 128);
       printf("from 0x%x to 0x%lx (global memory space)\n",
               addr+addr_pad,
               addr+addr_pad + num_bits/8);
       fflush(stdout);
       g_last_symbol->set_address( addr+addr_pad );
-      g_current_symbol_table->alloc_global( num_bits/8 + addr_pad );
+      // Do not alloc in gem5-gpu: g_current_symbol_table->alloc_global( num_bits/8 + addr_pad );
       g_globals.insert( identifier );
       assert( g_current_symbol_table != NULL );
       g_sym_name_to_symbol_table[ identifier ] = g_current_symbol_table;
       break;
    case local_space:
+      panic("local memory allocation is untested!");
       if( g_func_info == NULL ) {
           printf("GPGPU-Sim PTX: allocating local region for \"%s\" ", identifier);
          fflush(stdout);
@@ -537,7 +543,7 @@ void add_function_arg()
    }
 }
 
-void add_extern_spec() 
+void add_extern_spec()
 {
    PTX_PARSE_DPRINTF("add_extern_spec");
    g_extern_spec = 1;
@@ -607,12 +613,12 @@ void add_label( const char *identifier )
    }
 }
 
-void add_opcode( int opcode ) 
+void add_opcode( int opcode )
 {
    g_opcode = opcode;
 }
 
-void add_pred( const char *identifier, int neg, int predModifier ) 
+void add_pred( const char *identifier, int neg, int predModifier )
 {
    PTX_PARSE_DPRINTF("add_pred");
    const symbol *s = g_current_symbol_table->lookup(identifier);
@@ -625,7 +631,7 @@ void add_pred( const char *identifier, int neg, int predModifier )
    g_pred_mod = predModifier;
 }
 
-void add_option( int option ) 
+void add_option( int option )
 {
    PTX_PARSE_DPRINTF("add_option");
    g_options.push_back( option );
@@ -653,7 +659,7 @@ void add_1vector_operand( const char *d1 )
    g_operands.push_back( operand_info(s1,NULL,NULL,NULL) );
 }
 
-void add_2vector_operand( const char *d1, const char *d2 ) 
+void add_2vector_operand( const char *d1, const char *d2 )
 {
    PTX_PARSE_DPRINTF("add_2vector_operand");
    const symbol *s1 = g_current_symbol_table->lookup(d1);
@@ -662,7 +668,7 @@ void add_2vector_operand( const char *d1, const char *d2 )
    g_operands.push_back( operand_info(s1,s2,NULL,NULL) );
 }
 
-void add_3vector_operand( const char *d1, const char *d2, const char *d3 ) 
+void add_3vector_operand( const char *d1, const char *d2, const char *d3 )
 {
    PTX_PARSE_DPRINTF("add_3vector_operand");
    const symbol *s1 = g_current_symbol_table->lookup(d1);
@@ -672,7 +678,7 @@ void add_3vector_operand( const char *d1, const char *d2, const char *d3 )
    g_operands.push_back( operand_info(s1,s2,s3,NULL) );
 }
 
-void add_4vector_operand( const char *d1, const char *d2, const char *d3, const char *d4 ) 
+void add_4vector_operand( const char *d1, const char *d2, const char *d3, const char *d4 )
 {
    PTX_PARSE_DPRINTF("add_4vector_operand");
    const symbol *s1 = g_current_symbol_table->lookup(d1);
@@ -701,7 +707,7 @@ void add_memory_operand()
 }
 
 /*TODO: add other memory locations*/
-void change_memory_addr_space(const char *identifier) 
+void change_memory_addr_space(const char *identifier)
 {
    /*0 = N/A, not reading from memory
     *1 = global memory
@@ -844,7 +850,7 @@ void add_scalar_operand( const char *identifier )
    g_operands.push_back( operand_info(s) );
 }
 
-void add_neg_pred_operand( const char *identifier ) 
+void add_neg_pred_operand( const char *identifier )
 {
    PTX_PARSE_DPRINTF("add_neg_pred_operand");
    const symbol *s = g_current_symbol_table->lookup(identifier);
@@ -856,7 +862,7 @@ void add_neg_pred_operand( const char *identifier )
    g_operands.push_back( op );
 }
 
-void add_address_operand( const char *identifier, int offset ) 
+void add_address_operand( const char *identifier, int offset )
 {
    PTX_PARSE_DPRINTF("add_address_operand");
    const symbol *s = g_current_symbol_table->lookup(identifier);
@@ -890,7 +896,7 @@ void add_file( unsigned num, const char *filename )
       char *l=b;
       char *n=b;
       while( *n != '\0' ) {
-          if( *n == '/' ) 
+          if( *n == '/' )
               l = n+1;
           n++;
       }
@@ -929,17 +935,17 @@ void add_pragma( const char *str )
 
 void version_header(double a) {}  //intentional dummy function
 
-void target_header(char* a) 
+void target_header(char* a)
 {
    g_global_symbol_table->set_sm_target(a,NULL,NULL);
 }
 
-void target_header2(char* a, char* b) 
+void target_header2(char* a, char* b)
 {
    g_global_symbol_table->set_sm_target(a,b,NULL);
 }
 
-void target_header3(char* a, char* b, char* c) 
+void target_header3(char* a, char* b, char* c)
 {
    g_global_symbol_table->set_sm_target(a,b,c);
 }

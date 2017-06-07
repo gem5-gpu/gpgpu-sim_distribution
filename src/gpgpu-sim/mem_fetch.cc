@@ -118,7 +118,7 @@ bool mem_fetch::istexture() const
 bool mem_fetch::isconst() const
 { 
     if( m_inst.empty() ) return false;
-    return (m_inst.space.get_type() == const_space) || (m_inst.space.get_type() == param_space_kernel);
+    return m_inst.space.get_type() == param_space_kernel;
 }
 
 /// Returns number of flits traversing interconnect. simt_to_mem specifies the direction

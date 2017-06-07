@@ -36,7 +36,7 @@
 
 #include <vector>
 
-#include "module.hpp"
+#include "intersim2/module.hpp"
 
 class Arbiter : public Module {
 

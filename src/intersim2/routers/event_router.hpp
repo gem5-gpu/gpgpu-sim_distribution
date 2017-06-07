@@ -32,14 +32,14 @@
 #include <queue>
 #include <vector>
 
-#include "module.hpp"
+#include "intersim2/arbiters/prio_arb.hpp"
+#include "intersim2/buffer.hpp"
+#include "intersim2/module.hpp"
+#include "intersim2/outputset.hpp"
+#include "intersim2/pipefifo.hpp"
+#include "intersim2/routefunc.hpp"
+#include "intersim2/vc.hpp"
 #include "router.hpp"
-#include "buffer.hpp"
-#include "vc.hpp"
-#include "prio_arb.hpp"
-#include "routefunc.hpp"
-#include "outputset.hpp"
-#include "pipefifo.hpp"
 
 class EventNextVCState : public Module {
 public:

@@ -33,8 +33,8 @@
 #include <set>
 #include <vector>
 
-#include "module.hpp"
-#include "config_utils.hpp"
+#include "intersim2/module.hpp"
+#include "intersim2/config_utils.hpp"
 
 class Allocator : public Module {
 protected:

@@ -39,12 +39,13 @@
 //  Modified 11/6/2007 by Ted Jiang
 //  Now handeling n = most power of 2: 16, 64, 256, 1024
 // ----------------------------------------------------------------------
-#include "booksim.hpp"
 #include <vector>
 #include <sstream>
 #include <cassert>
-#include "random_utils.hpp"
-#include "misc_utils.hpp"
+
+#include "intersim2/booksim.hpp"
+#include "intersim2/misc_utils.hpp"
+#include "intersim2/random_utils.hpp"
 #include "cmesh.hpp"
 
 int CMesh::_cX = 0 ;

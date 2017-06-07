@@ -38,9 +38,10 @@
  *which are replaced by iq rotuer and event router in the present form
  */
 
-#include "booksim.hpp"
 #include <iostream>
 #include <cassert>
+
+#include "intersim2/booksim.hpp"
 #include "router.hpp"
 
 //////////////////Sub router types//////////////////////

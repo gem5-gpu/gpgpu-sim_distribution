@@ -57,6 +57,7 @@ extern void gpgpu_cuda_ptx_sim_main_func( kernel_info_t &kernel, bool openCL = f
 extern void   print_splash();
 extern void   gpgpu_ptx_sim_register_const_variable(void*, const char *deviceName, size_t size );
 extern void   gpgpu_ptx_sim_register_global_variable(void *hostVar, const char *deviceName, size_t size );
+extern std::string gpgpu_ptx_sim_hostvar_to_sym_name(const char *hostVar);
 extern void   gpgpu_ptx_sim_memcpy_symbol(const char *hostVar, const void *src, size_t count, size_t offset, int to, gpgpu_t *gpu );
 
 extern void read_sim_environment_variables();

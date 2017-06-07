@@ -41,8 +41,8 @@
 #ifndef _CMESH_HPP_
 #define _CMESH_HPP_
 
+#include "intersim2/routefunc.hpp"
 #include "network.hpp"
-#include "routefunc.hpp"
 
 class CMesh : public Network {
 public:

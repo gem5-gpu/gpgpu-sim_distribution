@@ -344,10 +344,10 @@ static void print_reg( FILE *fp, std::string name, ptx_reg_t value, symbol_table
    fflush(fp);
 }
 
-static void print_reg( std::string name, ptx_reg_t value, symbol_table *symtab )
-{
-   print_reg(stdout,name,value,symtab);
-}
+//static void print_reg( std::string name, ptx_reg_t value, symbol_table *symtab )
+//{
+//   print_reg(stdout,name,value,symtab);
+//}
 
 void ptx_thread_info::callstack_push( unsigned pc, unsigned rpc, const symbol *return_var_src, const symbol *return_var_dst, unsigned call_uid )
 {

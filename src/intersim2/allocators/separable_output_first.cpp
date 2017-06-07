@@ -31,14 +31,13 @@
 //
 // ----------------------------------------------------------------------
 
-#include "separable_output_first.hpp"
-
-#include "booksim.hpp"
-#include "arbiter.hpp"
-
 #include <vector>
 #include <iostream>
 #include <cstring>
+
+#include "intersim2/booksim.hpp"
+#include "intersim2/arbiters/arbiter.hpp"
+#include "separable_output_first.hpp"
 
 SeparableOutputFirstAllocator::
 SeparableOutputFirstAllocator( Module* parent, const string& name, int inputs,

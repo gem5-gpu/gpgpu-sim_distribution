@@ -34,8 +34,8 @@
 #include <set>
 #include <map>
 
+#include "intersim2/routefunc.hpp"
 #include "router.hpp"
-#include "routefunc.hpp"
 
 using namespace std;
 

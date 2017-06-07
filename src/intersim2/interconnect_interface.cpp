@@ -31,17 +31,17 @@
 #include <iomanip>
 #include <cmath>
 
-#include "interconnect_interface.hpp"
-#include "routefunc.hpp"
-#include "globals.hpp"
-#include "trafficmanager.hpp"
-#include "power_module.hpp"
-#include "mem_fetch.h"
-#include "flit.hpp"
-#include "gputrafficmanager.hpp"
+#include "gpgpu-sim/mem_fetch.h"
 #include "booksim.hpp"
+#include "flit.hpp"
+#include "globals.hpp"
+#include "gputrafficmanager.hpp"
+#include "interconnect_interface.hpp"
 #include "intersim_config.hpp"
-#include "network.hpp"
+#include "routefunc.hpp"
+#include "trafficmanager.hpp"
+#include "networks/network.hpp"
+#include "power/power_module.hpp"
 
 InterconnectInterface* InterconnectInterface::New(const char* const config_file)
 {
@@ -191,8 +191,8 @@ void InterconnectInterface::Push(unsigned input_deviceID, unsigned output_device
 void* InterconnectInterface::Pop(unsigned deviceID)
 {
   int icntID = _node_map[deviceID];
-#if DEBUG
-  cout<<"Call interconnect POP  " << output<<endl;
+#if INTERSIM_DEBUG
+  cout<<"Call interconnect POP  " << icntID<<endl;
 #endif
   
   void* data = NULL;

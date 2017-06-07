@@ -8,9 +8,9 @@
 #include "interconnect_interface.h"
 
 //Turns on flip tracking!
-//#ifndef DEBUG
-#define DEBUG 0
-//#endif
+#ifndef TM_DEBUG
+#define TM_DEBUG 0
+#endif
 
 int MATLAB_OUTPUT        = 0;    // output data in MATLAB friendly format
 int DISPLAY_LAT_DIST     = 1; // distribution of packet latencies
@@ -284,7 +284,7 @@ Flit *TrafficManager::_NewFlit( )
    f->watch = false;
 
    // Add specific packet watches for debugging
-   if (DEBUG || f->id == -1 ) {
+   if (TM_DEBUG || f->id == -1 ) {
       f->watch = true;
    }
 

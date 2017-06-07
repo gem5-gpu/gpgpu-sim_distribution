@@ -194,6 +194,7 @@ int memory_partition_unit::global_sub_partition_id_to_local_id(int global_sub_pa
 
 void memory_partition_unit::dram_cycle() 
 { 
+    assert(m_dram->que_length() == 0);
     // pop completed memory request from dram and push it to dram-to-L2 queue 
     // of the original sub partition 
     mem_fetch* mf_return = m_dram->return_queue_top();

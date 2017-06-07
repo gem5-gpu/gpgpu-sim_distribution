@@ -25,22 +25,23 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "booksim.hpp"
 #include <iostream>
 #include <sstream>
 #include <cassert>
+
+#include "intersim2/booksim.hpp"
 #include "allocator.hpp"
 
 /////////////////////////////////////////////////////////////////////////
 //Allocator types
-#include "maxsize.hpp"
-#include "pim.hpp"
 #include "islip.hpp"
 #include "loa.hpp"
-#include "wavefront.hpp"
+#include "maxsize.hpp"
+#include "pim.hpp"
 #include "selalloc.hpp"
 #include "separable_input_first.hpp"
 #include "separable_output_first.hpp"
+#include "wavefront.hpp"
 //
 /////////////////////////////////////////////////////////////////////////
 

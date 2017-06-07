@@ -32,14 +32,14 @@
 #include <queue>
 #include <vector>
 
-#include "module.hpp"
+#include "intersim2/allocators/allocator.hpp"
+#include "intersim2/buffer_state.hpp"
+#include "intersim2/module.hpp"
+#include "intersim2/outputset.hpp"
+#include "intersim2/pipefifo.hpp"
+#include "intersim2/routefunc.hpp"
+#include "intersim2/vc.hpp"
 #include "router.hpp"
-#include "allocator.hpp"
-#include "routefunc.hpp"
-#include "outputset.hpp"
-#include "buffer_state.hpp"
-#include "pipefifo.hpp"
-#include "vc.hpp"
 
 class ChaosRouter : public Router {
 

@@ -27,6 +27,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "instructions.h"
+#include "instructions_extra.h"
 #include "ptx_ir.h"
 #include "opcodes.h"
 #include "ptx_sim.h"
@@ -40,6 +41,7 @@
 #include "cuda_device_printf.h"
 #include "../gpgpu-sim/gpu-sim.h"
 #include "../gpgpu-sim/shader.h"
+#include "gpu/gpgpu-sim/cuda_gpu.hh"
 
 #include <stdarg.h>
 
@@ -52,7 +54,7 @@ const char *g_opcode_string[NUM_OPCODES] = {
 };
 
 void inst_not_implemented( const ptx_instruction * pI ) ;
-ptx_reg_t srcOperandModifiers(ptx_reg_t opData, operand_info opInfo, operand_info dstInfo, unsigned type, ptx_thread_info *thread);
+//ptx_reg_t srcOperandModifiers(ptx_reg_t opData, operand_info opInfo, operand_info dstInfo, unsigned type, ptx_thread_info *thread);
 
 void sign_extend( ptx_reg_t &data, unsigned src_size, const operand_info &dst );
 
@@ -202,50 +204,22 @@ ptx_reg_t ptx_thread_info::get_operand_value( const operand_info &op, operand_in
    }
 
    ptx_reg_t finalResult;
-   memory_space *mem = NULL;
-   size_t size=0;
-   int t=0;
    finalResult.u64=0;
 
-   //complete other cases for reading from memory, such as reading from other const memory
+   // @TODO: Joel: This code should only be executed when simulating PTXPlus,
+   //        and it should be explored later
    if((op.get_addr_space() == global_space)&&(derefFlag)) {
-       // global memory - g[4], g[$r0]
-       mem = thread->get_global_memory();
-       type_info_key::type_decode(opType,size,t);
-       mem->read(result.u32,size/8,&finalResult.u128);
-       thread->m_last_effective_address = result.u32;
-       thread->m_last_memory_space = global_space;
-
-       if( opType == S16_TYPE || opType == S32_TYPE )
-         sign_extend(finalResult,size,dstInfo);
+       printf("GPGPU-Sim PTX: DON'T ACCESS MEMORY (GLOBAL) FOR OPERANDS!\n");
+       assert(0);
    } else if((op.get_addr_space() == shared_space)&&(derefFlag)) {
-      // shared memory - s[4], s[$r0]
-       mem = thread->m_shared_mem;
-       type_info_key::type_decode(opType,size,t);
-       mem->read(result.u32,size/8,&finalResult.u128);
-       thread->m_last_effective_address = result.u32;
-       thread->m_last_memory_space = shared_space;
-
-       if( opType == S16_TYPE || opType == S32_TYPE ) 
-         sign_extend(finalResult,size,dstInfo);
+       printf("GPGPU-Sim PTX: DON'T ACCESS MEMORY (SHARED) FOR OPERANDS!\n");
+       assert(0);
    } else if((op.get_addr_space() == const_space)&&(derefFlag)) {
-      // const memory - ce0c1[4], ce0c1[$r0]
-       mem = thread->get_global_memory();
-       type_info_key::type_decode(opType,size,t);
-       mem->read((result.u32 + op.get_const_mem_offset()),size/8,&finalResult.u128);
-       thread->m_last_effective_address = result.u32;
-       thread->m_last_memory_space = const_space;
-       if( opType == S16_TYPE || opType == S32_TYPE )
-         sign_extend(finalResult,size,dstInfo);
+       printf("GPGPU-Sim PTX: DON'T ACCESS MEMORY (CONST) FOR OPERANDS!\n");
+       assert(0);
    } else if((op.get_addr_space() == local_space)&&(derefFlag)) {
-      // local memory - l0[4], l0[$r0]
-       mem = thread->m_local_mem;
-       type_info_key::type_decode(opType,size,t);
-       mem->read(result.u32,size/8,&finalResult.u128);
-       thread->m_last_effective_address = result.u32;
-       thread->m_last_memory_space = local_space;
-       if( opType == S16_TYPE || opType == S32_TYPE ) 
-         sign_extend(finalResult,size,dstInfo);
+       printf("GPGPU-Sim PTX: DON'T ACCESS MEMORY (LOCAL) FOR OPERANDS!\n");
+       assert(0);
    } else {
        finalResult = result;
    }
@@ -392,7 +366,6 @@ void ptx_thread_info::set_operand_value( const operand_info &dst, const ptx_reg_
 void ptx_thread_info::set_operand_value( const operand_info &dst, const ptx_reg_t &data, unsigned type, ptx_thread_info *thread, const ptx_instruction *pI )
 {
    ptx_reg_t dstData;
-   memory_space *mem = NULL;
    size_t size;
    int t;
 
@@ -565,40 +538,27 @@ void ptx_thread_info::set_operand_value( const operand_info &dst, const ptx_reg_
       }
    }
 
+   // @TODO: Joel: These should only be executed with PTXPlus simulation, and
+   //        this support should be explored later
    // global memory - g[4], g[$r0]
    else if(dst.get_addr_space() == global_space)
    {
-       dstData = thread->get_operand_value(dst, dst, type, thread, 0);
-       mem = thread->get_global_memory();
-       type_info_key::type_decode(type,size,t);
-
-       mem->write(dstData.u32,size/8,&data.u128,thread,pI);
-       thread->m_last_effective_address = dstData.u32;
-       thread->m_last_memory_space = global_space;
+       printf("GPGPU-Sim PTX: DON'T ACCESS MEMORY (GLOBAL) FOR SETTING OPERANDS!\n");
+       assert(0);
    }
 
    // shared memory - s[4], s[$r0]
    else if(dst.get_addr_space() == shared_space)
    {
-       dstData = thread->get_operand_value(dst, dst, type, thread, 0);
-       mem = thread->m_shared_mem;
-       type_info_key::type_decode(type,size,t);
-
-       mem->write(dstData.u32,size/8,&data.u128,thread,pI);
-       thread->m_last_effective_address = dstData.u32;
-       thread->m_last_memory_space = shared_space;
+       printf("GPGPU-Sim PTX: DON'T ACCESS MEMORY (SHARED) FOR SETTING OPERANDS!\n");
+       assert(0);
    }
 
    // local memory - l0[4], l0[$r0]
    else if(dst.get_addr_space() == local_space)
    {
-       dstData = thread->get_operand_value(dst, dst, type, thread, 0);
-       mem = thread->m_local_mem;
-       type_info_key::type_decode(type,size,t);
-
-       mem->write(dstData.u32,size/8,&data.u128,thread,pI);
-       thread->m_last_effective_address = dstData.u32;
-       thread->m_last_memory_space = local_space;
+       printf("GPGPU-Sim PTX: DON'T ACCESS MEMORY (LOCAL) FOR SETTING OPERANDS!\n");
+       assert(0);
    }
 
    else
@@ -867,6 +827,8 @@ void andn_impl( const ptx_instruction *pI, ptx_thread_info *thread )
 
 void atom_callback( const inst_t* inst, ptx_thread_info* thread )
 {
+    printf("GPGPU-Sim PTX: UNTESTED INSTRUCTION: ATOM\n");
+    assert(0);
    const ptx_instruction *pI = dynamic_cast<const ptx_instruction*>(inst);
 
    // "Decode" the output type
@@ -1179,6 +1141,8 @@ void atom_callback( const inst_t* inst, ptx_thread_info* thread )
 // atom_impl will now result in a callback being called in mem_ctrl_pop (gpu-sim.c)
 void atom_impl( const ptx_instruction *pI, ptx_thread_info *thread )
 {   
+    printf("GPGPU-Sim PTX: UNTESTED INSTRUCTION: ATOM\n");
+    assert(0);
    // SYNTAX
    // atom.space.operation.type d, a, b[, c]; (now read in callback)
 
@@ -2108,30 +2072,32 @@ void fma_impl( const ptx_instruction *pI, ptx_thread_info *thread )
 }
 
 void isspacep_impl( const ptx_instruction *pI, ptx_thread_info *thread ) 
-{ 
-   ptx_reg_t a;
-   bool t=false;
-
-   const operand_info &dst  = pI->dst();
-   const operand_info &src1 = pI->src1();
-   memory_space_t space = pI->get_space();
-
-   a = thread->get_reg(src1.get_symbol());
-   addr_t addr = (addr_t)a.u64;
-   unsigned smid = thread->get_hw_sid();
-   unsigned hwtid = thread->get_hw_tid();
-
-   switch( space.get_type() ) {
-   case shared_space: t = isspace_shared( smid, addr );
-   case local_space:  t = isspace_local( smid, hwtid, addr );
-   case global_space: t = isspace_global( addr );
-   default: abort();
-   }
-
-   ptx_reg_t p;
-   p.pred = t?1:0;
-
-   thread->set_reg(dst.get_symbol(),p);
+{
+    printf("GPGPU-Sim PTX: UNTESTED INSTRUCTION: ISSPACEP\n");
+    assert(0);
+//   ptx_reg_t a;
+//   bool t=false;
+//
+//   const operand_info &dst  = pI->dst();
+//   const operand_info &src1 = pI->src1();
+//   memory_space_t space = pI->get_space();
+//
+//   a = thread->get_reg(src1.get_symbol());
+//   addr_t addr = (addr_t)a.u64;
+//   unsigned smid = thread->get_hw_sid();
+//   unsigned hwtid = thread->get_hw_tid();
+//
+//   switch( space.get_type() ) {
+//   case shared_space: t = isspace_shared( smid, addr );
+//   case local_space:  t = isspace_local( smid, hwtid, addr );
+//   case global_space: t = isspace_global( addr );
+//   default: abort();
+//   }
+//
+//   ptx_reg_t p;
+//   p.pred = t?1:0;
+//
+//   thread->set_reg(dst.get_symbol(),p);
 }
 
 void decode_space( memory_space_t &space, ptx_thread_info *thread, const operand_info &op, memory_space *&mem, addr_t &addr)
@@ -2203,28 +2169,36 @@ void ld_exec( const ptx_instruction *pI, ptx_thread_info *thread )
 
    decode_space(space,thread,src1,mem,addr);
 
-   size_t size;
-   int t;
-   data.u64=0;
-   type_info_key::type_decode(type,size,t);
-   if (!vector_spec) {
-      mem->read(addr,size/8,&data.s64);
-      if( type == S16_TYPE || type == S32_TYPE ) 
-         sign_extend(data,size,dst);
-      thread->set_operand_value(dst,data, type, thread, pI);
-   } else {
-      ptx_reg_t data1, data2, data3, data4;
-      mem->read(addr,size/8,&data1.s64);
-      mem->read(addr+size/8,size/8,&data2.s64);
-      if (vector_spec != V2_TYPE) { //either V3 or V4
-         mem->read(addr+2*size/8,size/8,&data3.s64);
-         if (vector_spec != V3_TYPE) { //v4
-            mem->read(addr+3*size/8,size/8,&data4.s64);
-            thread->set_vector_operand_values(dst,data1,data2,data3,data4);
-         } else //v3
-            thread->set_vector_operand_values(dst,data1,data2,data3,data3);
-      } else //v2
-         thread->set_vector_operand_values(dst,data1,data2,data2,data2);
+   thread->get_gpu()->gem5CudaGPU->getCudaCore(thread->get_hw_sid())->record_ld(space);
+
+   if (space.get_type() != global_space && space.get_type() != const_space) {
+       size_t size;
+       int t;
+       data.u64=0;
+       type_info_key::type_decode(type,size,t);
+       // Note here that when using gem5 memories, this read function will not
+       // return the data that will be set in the operand. Instead, when the read
+       // completes, it will write the operands a second time with the correct data
+       if (!vector_spec) {
+          mem->read(addr,size/8,&data.s64,thread,pI);
+          // Before, we did a functional read here.
+          if( type == S16_TYPE || type == S32_TYPE )
+             sign_extend(data,size,dst);
+          thread->set_operand_value(dst,data, type, thread, pI);
+       } else {
+          ptx_reg_t data1, data2, data3, data4;
+          mem->read(addr,size/8,&data1.s64,thread,pI);
+          mem->read(addr+size/8,size/8,&data2.s64,thread,pI);
+          if (vector_spec != V2_TYPE) { //either V3 or V4
+             mem->read(addr+2*size/8,size/8,&data3.s64,thread,pI);
+             if (vector_spec != V3_TYPE) { //v4
+                mem->read(addr+3*size/8,size/8,&data4.s64,thread,pI);
+                thread->set_vector_operand_values(dst,data1,data2,data3,data4);
+             } else //v3
+                thread->set_vector_operand_values(dst,data1,data2,data3,data3);
+          } else //v2
+             thread->set_vector_operand_values(dst,data1,data2,data2,data2);
+       }
    }
    thread->m_last_effective_address = addr;
    thread->m_last_memory_space = space; 
@@ -3564,39 +3538,42 @@ void st_impl( const ptx_instruction *pI, ptx_thread_info *thread )
    addr_t addr = addr_reg.u64;
 
    decode_space(space,thread,dst,mem,addr);
+   thread->get_gpu()->gem5CudaGPU->getCudaCore(thread->get_hw_sid())->record_st(space);
 
-   size_t size;
-   int t;
-   type_info_key::type_decode(type,size,t);
+   if (space.get_type() != global_space && space.get_type() != const_space) {
+       size_t size;
+       int t;
+       type_info_key::type_decode(type,size,t);
 
-   if (!vector_spec) {
-      data = thread->get_operand_value(src1, dst, type, thread, 1);
-      mem->write(addr,size/8,&data.s64,thread,pI);
-   } else {
-      if (vector_spec == V2_TYPE) {
-         ptx_reg_t* ptx_regs = new ptx_reg_t[2]; 
-         thread->get_vector_operand_values(src1, ptx_regs, 2); 
-         mem->write(addr,size/8,&ptx_regs[0].s64,thread,pI);
-         mem->write(addr+size/8,size/8,&ptx_regs[1].s64,thread,pI);
-         delete [] ptx_regs;
-      }
-      if (vector_spec == V3_TYPE) {
-         ptx_reg_t* ptx_regs = new ptx_reg_t[3]; 
-         thread->get_vector_operand_values(src1, ptx_regs, 3); 
-         mem->write(addr,size/8,&ptx_regs[0].s64,thread,pI);
-         mem->write(addr+size/8,size/8,&ptx_regs[1].s64,thread,pI);
-         mem->write(addr+2*size/8,size/8,&ptx_regs[2].s64,thread,pI);
-         delete [] ptx_regs;
-      }
-      if (vector_spec == V4_TYPE) {
-         ptx_reg_t* ptx_regs = new ptx_reg_t[4]; 
-         thread->get_vector_operand_values(src1, ptx_regs, 4); 
-         mem->write(addr,size/8,&ptx_regs[0].s64,thread,pI);
-         mem->write(addr+size/8,size/8,&ptx_regs[1].s64,thread,pI);
-         mem->write(addr+2*size/8,size/8,&ptx_regs[2].s64,thread,pI);
-         mem->write(addr+3*size/8,size/8,&ptx_regs[3].s64,thread,pI);
-         delete [] ptx_regs;
-      }
+       if (!vector_spec) {
+          data = thread->get_operand_value(src1, dst, type, thread, 1);
+          mem->write(addr,size/8,&data.s64,thread,pI);
+       } else {
+          if (vector_spec == V2_TYPE) {
+             ptx_reg_t* ptx_regs = new ptx_reg_t[2];
+             thread->get_vector_operand_values(src1, ptx_regs, 2);
+             mem->write(addr,size/8,&ptx_regs[0].s64,thread,pI);
+             mem->write(addr+size/8,size/8,&ptx_regs[1].s64,thread,pI);
+             delete [] ptx_regs;
+          }
+          if (vector_spec == V3_TYPE) {
+             ptx_reg_t* ptx_regs = new ptx_reg_t[3];
+             thread->get_vector_operand_values(src1, ptx_regs, 3);
+             mem->write(addr,size/8,&ptx_regs[0].s64,thread,pI);
+             mem->write(addr+size/8,size/8,&ptx_regs[1].s64,thread,pI);
+             mem->write(addr+2*size/8,size/8,&ptx_regs[2].s64,thread,pI);
+             delete [] ptx_regs;
+          }
+          if (vector_spec == V4_TYPE) {
+             ptx_reg_t* ptx_regs = new ptx_reg_t[4];
+             thread->get_vector_operand_values(src1, ptx_regs, 4);
+             mem->write(addr,size/8,&ptx_regs[0].s64,thread,pI);
+             mem->write(addr+size/8,size/8,&ptx_regs[1].s64,thread,pI);
+             mem->write(addr+2*size/8,size/8,&ptx_regs[2].s64,thread,pI);
+             mem->write(addr+3*size/8,size/8,&ptx_regs[3].s64,thread,pI);
+             delete [] ptx_regs;
+          }
+       }
    }
    thread->m_last_effective_address = addr;
    thread->m_last_memory_space = space; 
@@ -3778,6 +3755,8 @@ void textureNormalizeOutput( const struct cudaChannelFormatDesc& desc, ptx_reg_t
 
 void tex_impl( const ptx_instruction *pI, ptx_thread_info *thread ) 
 {
+    printf("GPGPU-Sim PTX: UNTESTED INSTRUCTION: TEX\n");
+    assert(0);
    unsigned dimension = pI->dimension();
    const operand_info &dst = pI->dst(); //the registers to which fetched texel will be placed
    const operand_info &src1 = pI->src1(); //the name of the texture
@@ -4161,61 +4140,61 @@ void inst_not_implemented( const ptx_instruction * pI )
    abort();
 }
 
-ptx_reg_t srcOperandModifiers(ptx_reg_t opData, operand_info opInfo, operand_info dstInfo, unsigned type, ptx_thread_info *thread)
-{
-   ptx_reg_t result;
-   memory_space *mem = NULL;
-   size_t size;
-   int t;
-   result.u64=0;
-
-   //complete other cases for reading from memory, such as reading from other const memory
-   if(opInfo.get_addr_space() == global_space)
-   {
-       mem = thread->get_global_memory();
-       type_info_key::type_decode(type,size,t);
-       mem->read(opData.u32,size/8,&result.u64);
-       if( type == S16_TYPE || type == S32_TYPE ) 
-         sign_extend(result,size,dstInfo);
-   }
-   else if(opInfo.get_addr_space() == shared_space)
-   {
-       mem = thread->m_shared_mem;
-       type_info_key::type_decode(type,size,t);
-       mem->read(opData.u32,size/8,&result.u64);
-
-       if( type == S16_TYPE || type == S32_TYPE ) 
-         sign_extend(result,size,dstInfo);
-
-   }
-   else if(opInfo.get_addr_space() == const_space)
-   {
-       mem = thread->get_global_memory();
-       type_info_key::type_decode(type,size,t);
-
-       mem->read((opData.u32 + opInfo.get_const_mem_offset()),size/8,&result.u64);
-
-       if( type == S16_TYPE || type == S32_TYPE ) 
-         sign_extend(result,size,dstInfo);
-   }
-   else
-   {
-       result = opData;
-   }
-
-   if(opInfo.get_operand_lohi() == 1)
-   {
-        result.u64 = result.u64 & 0xFFFF;
-   }
-   else if(opInfo.get_operand_lohi() == 2)
-   {
-        result.u64 = (result.u64>>16) & 0xFFFF;
-   }
-
-   if(opInfo.get_operand_neg() == true) {
-      result.f32 = -result.f32;
-   }
-
-   return result;
-}
+//ptx_reg_t srcOperandModifiers(ptx_reg_t opData, operand_info opInfo, operand_info dstInfo, unsigned type, ptx_thread_info *thread)
+//{
+//   ptx_reg_t result;
+//   memory_space *mem = NULL;
+//   size_t size;
+//   int t;
+//   result.u64=0;
+//
+//   //complete other cases for reading from memory, such as reading from other const memory
+//   if(opInfo.get_addr_space() == global_space)
+//   {
+//       mem = thread->get_global_memory();
+//       type_info_key::type_decode(type,size,t);
+//       mem->read(opData.u32,size/8,&result.u64);
+//       if( type == S16_TYPE || type == S32_TYPE )
+//         sign_extend(result,size,dstInfo);
+//   }
+//   else if(opInfo.get_addr_space() == shared_space)
+//   {
+//       mem = thread->m_shared_mem;
+//       type_info_key::type_decode(type,size,t);
+//       mem->read(opData.u32,size/8,&result.u64);
+//
+//       if( type == S16_TYPE || type == S32_TYPE )
+//         sign_extend(result,size,dstInfo);
+//
+//   }
+//   else if(opInfo.get_addr_space() == const_space)
+//   {
+//       mem = thread->get_global_memory();
+//       type_info_key::type_decode(type,size,t);
+//
+//       mem->read((opData.u32 + opInfo.get_const_mem_offset()),size/8,&result.u64);
+//
+//       if( type == S16_TYPE || type == S32_TYPE )
+//         sign_extend(result,size,dstInfo);
+//   }
+//   else
+//   {
+//       result = opData;
+//   }
+//
+//   if(opInfo.get_operand_lohi() == 1)
+//   {
+//        result.u64 = result.u64 & 0xFFFF;
+//   }
+//   else if(opInfo.get_operand_lohi() == 2)
+//   {
+//        result.u64 = (result.u64>>16) & 0xFFFF;
+//   }
+//
+//   if(opInfo.get_operand_neg() == true) {
+//      result.f32 = -result.f32;
+//   }
+//
+//   return result;
+//}
 

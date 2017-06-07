@@ -25,11 +25,11 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "booksim.hpp"
 #include <iostream>
 
+#include "intersim2/booksim.hpp"
+#include "intersim2/random_utils.hpp"
 #include "islip.hpp"
-#include "random_utils.hpp"
 
 //#define DEBUG_ISLIP
 

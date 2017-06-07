@@ -37,8 +37,8 @@
 #include <iostream>
 #include <iomanip>
 
-#include "router.hpp"
 #include "globals.hpp"
+#include "routers/router.hpp"
 
 // ----------------------------------------------------------------------
 //  $Author: jbalfour $

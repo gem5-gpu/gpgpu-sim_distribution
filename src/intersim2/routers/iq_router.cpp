@@ -35,17 +35,17 @@
 #include <cassert>
 #include <limits>
 
-#include "globals.hpp"
-#include "random_utils.hpp"
-#include "vc.hpp"
-#include "routefunc.hpp"
-#include "outputset.hpp"
-#include "buffer.hpp"
-#include "buffer_state.hpp"
-#include "roundrobin_arb.hpp"
-#include "allocator.hpp"
-#include "switch_monitor.hpp"
-#include "buffer_monitor.hpp"
+#include "intersim2/allocators/allocator.hpp"
+#include "intersim2/arbiters/roundrobin_arb.hpp"
+#include "intersim2/power/buffer_monitor.hpp"
+#include "intersim2/power/switch_monitor.hpp"
+#include "intersim2/buffer.hpp"
+#include "intersim2/buffer_state.hpp"
+#include "intersim2/globals.hpp"
+#include "intersim2/outputset.hpp"
+#include "intersim2/random_utils.hpp"
+#include "intersim2/routefunc.hpp"
+#include "intersim2/vc.hpp"
 
 IQRouter::IQRouter( Configuration const & config, Module *parent, 
 		    string const & name, int id, int inputs, int outputs )

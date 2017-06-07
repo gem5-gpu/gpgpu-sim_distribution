@@ -274,6 +274,10 @@ public:
    }
 
    void ptx_fetch_inst( inst_t &inst ) const;
+
+   int readRegister(const warp_inst_t &inst, unsigned lane_id, char *data, unsigned id = 1);
+   void writeRegister(const warp_inst_t &inst, unsigned lane_id, char *data);
+
    void ptx_exec_inst( warp_inst_t &inst, unsigned lane_id );
 
    const ptx_version &get_ptx_version() const;

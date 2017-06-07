@@ -348,7 +348,7 @@ void interconnect_push ( unsigned int input_node, unsigned int output_node,
          nc=1;
       }
       traffic[nc]->_GeneratePacket( input, n_flits, 0 /*class*/, traffic[nc]->_time, data, output); 
-#if DOUB
+#if 0
       cout <<"Traffic[" << nc << "] (mapped) sending form "<< input << " to " << output <<endl;
 #endif
    }
@@ -574,7 +574,7 @@ void transfer2boundary_buf(int output) {
          if ( flit->head ) {
             assert (flit->dest == output);
          }
-#if DOUB
+#if 0
          cout <<"Traffic " <<nc<<" push out flit to (mapped)" << output <<endl;
 #endif
       }

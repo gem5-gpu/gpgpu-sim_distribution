@@ -291,6 +291,7 @@ protected:
     friend class tag_array;
     friend class baseline_cache;
     friend class read_only_cache;
+    friend class l1icache_gem5;
     friend class tex_cache;
     friend class data_cache;
     friend class l1_cache;
@@ -557,17 +558,17 @@ public:
 
     virtual enum cache_request_status access( new_addr_type addr, mem_fetch *mf, unsigned time, std::list<cache_event> &events ) =  0;
     /// Sends next request to lower level of memory
-    void cycle();
+    virtual void cycle();
     /// Interface for response from lower memory level (model bandwidth restictions in caller)
-    void fill( mem_fetch *mf, unsigned time );
+    virtual void fill( mem_fetch *mf, unsigned time );
     /// Checks if mf is waiting to be filled by lower memory level
-    bool waiting_for_fill( mem_fetch *mf );
+    virtual bool waiting_for_fill( mem_fetch *mf );
     /// Are any (accepted) accesses that had to wait for memory now ready? (does not include accesses that "HIT")
-    bool access_ready() const {return m_mshrs.access_ready();}
+    virtual bool access_ready() const {return m_mshrs.access_ready();}
     /// Pop next ready access (does not include accesses that "HIT")
-    mem_fetch *next_access(){return m_mshrs.next_access();}
+    virtual mem_fetch *next_access(){return m_mshrs.next_access();}
     // flash invalidate all entries in cache
-    void flush(){m_tag_array->flush();}
+    virtual void flush(){m_tag_array->flush();}
     void print(FILE *fp, unsigned &accesses, unsigned &misses) const;
     void display_state( FILE *fp ) const;
 

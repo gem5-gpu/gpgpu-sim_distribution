@@ -104,7 +104,7 @@ class memory_space
 public:
    virtual ~memory_space() {}
    virtual void write( mem_addr_t addr, size_t length, const void *data, ptx_thread_info *thd, const ptx_instruction *pI ) = 0;
-   virtual void read( mem_addr_t addr, size_t length, void *data ) const = 0;
+   virtual void read( mem_addr_t addr, size_t length, void *data, ptx_thread_info *thd = NULL, const ptx_instruction *pI = NULL ) const = 0;
    virtual void print( const char *format, FILE *fout ) const = 0;
    virtual void set_watch( addr_t addr, unsigned watchpoint ) = 0;
 };
@@ -114,7 +114,7 @@ public:
    memory_space_impl( std::string name, unsigned hash_size );
 
    virtual void write( mem_addr_t addr, size_t length, const void *data, ptx_thread_info *thd, const ptx_instruction *pI );
-   virtual void read( mem_addr_t addr, size_t length, void *data ) const;
+   virtual void read( mem_addr_t addr, size_t length, void *data, ptx_thread_info *thd = NULL, const ptx_instruction *pI = NULL ) const;
    virtual void print( const char *format, FILE *fout ) const;
    virtual void set_watch( addr_t addr, unsigned watchpoint ); 
 

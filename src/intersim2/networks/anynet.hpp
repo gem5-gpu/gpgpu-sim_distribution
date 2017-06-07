@@ -28,12 +28,13 @@
 #ifndef _ANYNET_HPP_
 #define _ANYNET_HPP_
 
-#include "network.hpp"
-#include "routefunc.hpp"
 #include <cassert>
 #include <string>
 #include <map>
 #include <list>
+
+#include "intersim2/routefunc.hpp"
+#include "network.hpp"
 
 class AnyNet : public Network {
 

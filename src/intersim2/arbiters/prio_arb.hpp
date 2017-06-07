@@ -30,8 +30,8 @@
 
 #include <list>
 
-#include "module.hpp"
-#include "config_utils.hpp"
+#include "intersim2/config_utils.hpp"
+#include "intersim2/module.hpp"
 
 class PriorityArbiter : public Module {
   int _rr_ptr;

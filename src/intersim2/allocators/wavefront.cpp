@@ -30,8 +30,7 @@
  *The wave front allocator
  *
  */
-#include "booksim.hpp"
-
+#include "intersim2/booksim.hpp"
 #include "wavefront.hpp"
 
 Wavefront::Wavefront( Module *parent, const string& name,

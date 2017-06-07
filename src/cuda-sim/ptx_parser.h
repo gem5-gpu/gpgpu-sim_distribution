@@ -35,6 +35,7 @@ extern int g_error_detected;
 #ifdef __cplusplus 
 class symbol_table* init_parser(const char*);
 const class ptx_instruction *ptx_instruction_lookup( const char *filename, unsigned linenumber );
+extern "C" {
 #endif
 
 const char *decode_token( int type );
@@ -93,6 +94,9 @@ void change_double_operand_type( int addr_type );
 void change_operand_neg( );
 void set_immediate_operand_type( );
 void version_header(double a);
+#ifdef __cplusplus
+}
+#endif
 
 #define NON_ARRAY_IDENTIFIER 1
 #define ARRAY_IDENTIFIER_NO_DIM 2

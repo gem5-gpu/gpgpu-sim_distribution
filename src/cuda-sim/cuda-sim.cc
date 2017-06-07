@@ -26,6 +26,8 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "gpu/gpgpu-sim/cuda_gpu.hh"
+
 #include "cuda-sim.h"
 
 #include "instructions.h"
@@ -92,6 +94,8 @@ void ptx_opcocde_latency_options (option_parser_t opp) {
 }
 
 static address_type get_converge_point(address_type pc);
+
+void sign_extend( ptx_reg_t &data, unsigned src_size, const operand_info &dst );
 
 void gpgpu_t::gpgpu_ptx_sim_bindNameToTexture(const char* name, const struct textureReference* texref, int dim, int readmode, int ext)
 {
@@ -396,9 +400,11 @@ void gpgpu_t::memcpy_from_gpu( void *dst, size_t src_start_addr, size_t count )
       printf("GPGPU-Sim PTX: copying %zu bytes from GPU[0x%Lx] to CPU[0x%Lx] ...", count, (unsigned long long) src_start_addr, (unsigned long long) dst );
       fflush(stdout);
    }
+
    unsigned char *dst_data = (unsigned char*)dst;
    for (unsigned n=0; n < count; n ++ ) 
-      m_global_mem->read(src_start_addr+n,1,dst_data+n);
+       m_global_mem->read(src_start_addr+n,1,dst_data+n);
+
    if(g_debug_execution >= 3) {
       printf( " done.\n");
       fflush(stdout);
@@ -1048,9 +1054,26 @@ void function_info::finalize( memory_space *param_mem )
       size = param_value.size; // size of param in bytes
       // assert(param_value.offset == param_address);
       if( size != p.get_size() / 8) {
-         printf("GPGPU-Sim PTX: WARNING actual kernel paramter size = %zu bytes vs. formal size = %zu (using smaller of two)\n",
-                size, p.get_size()/8);
-         size = (size<(p.get_size()/8))?size:(p.get_size()/8);
+         if(size == 4 && p.get_size()/8 == 8) {
+             warn("Parameter size is 8B, but 4B passed, possibly a pointer:\n" \
+                  "      Assuming a 32-bit CPU arch, promoting arg to 64-bit pointer for GPU\n" \
+                  "      This may fail if using structs/unions containing pointer types\n");
+             size_t orig_size = size;
+             size = p.get_size()/8;
+             param_value.size = size;
+             // TODO: GPGPU-Sim doesn't currently clean these up anywhere, but
+             // this should be freed at kernel completion or end of simulation
+             char *for_pdata = new char[size];
+             memset(for_pdata, 0, size * sizeof(char));
+             const char *pdata = reinterpret_cast<const char*>(param_value.pdata);
+             memcpy(for_pdata, pdata, orig_size);
+             param_value.pdata = for_pdata;
+             delete [] pdata;
+         } else {
+             printf("GPGPU-Sim PTX: WARNING actual kernel parameter size = %zu bytes vs. formal size = %zu (trying smaller of two)\n",
+                    size, p.get_size()/8);
+             size = (size<(p.get_size()/8))?size:(p.get_size()/8);
+         }
       } 
       // copy the parameter over word-by-word so that parameter that crosses a memory page can be copied over
       const size_t word_size = 4; 
@@ -1153,6 +1176,120 @@ static unsigned get_tex_datasize( const ptx_instruction *pI, ptx_thread_info *th
    return data_size; 
 }
 
+int ptx_thread_info::readRegister(const warp_inst_t &inst, unsigned lane_id, char *data, unsigned reg_id)
+{
+   const ptx_instruction *pI = m_func_info->get_instruction(inst.pc);
+
+   const operand_info &dst = pI->dst();
+   const operand_info &src = pI->operand_lookup(reg_id);
+   unsigned type = pI->get_type();
+   unsigned vector_spec = pI->get_vector();
+
+   // SIZE IS IN BITS
+   size_t size;
+   int basic_type;
+   type_info_key::type_decode(pI->get_type(), size, basic_type);
+
+   // NOTE: converting the register values like below (casting to ull) may not 
+   // work. It might keep some upper bits that are stale. see ptx_sim.h line 56
+
+   int offset = 0;
+   int bytes = size/8;
+
+   if (vector_spec) {
+      if (vector_spec == V2_TYPE) {
+         ptx_reg_t ptx_regs[2];
+         get_vector_operand_values(src, ptx_regs, 2);
+         memcpy(data+offset, &ptx_regs[0], bytes);
+         offset += bytes;
+         memcpy(data+offset, &ptx_regs[1], bytes);
+         return 2;
+      }
+      else if (vector_spec == V3_TYPE) {
+         ptx_reg_t ptx_regs[3];
+         get_vector_operand_values(src, ptx_regs, 3);
+         memcpy(data+offset, &ptx_regs[0], bytes);
+         offset += bytes;
+         memcpy(data+offset, &ptx_regs[1], bytes);
+         offset += bytes;
+         memcpy(data+offset, &ptx_regs[2], bytes);
+         offset += bytes;
+         return 3;
+      }
+      else {
+         assert(vector_spec == V4_TYPE);
+         ptx_reg_t ptx_regs[4];
+         get_vector_operand_values(src, ptx_regs, 4);
+         memcpy(data+offset, &ptx_regs[0], bytes);
+         offset += bytes;
+         memcpy(data+offset, &ptx_regs[1], bytes);
+         offset += bytes;
+         memcpy(data+offset, &ptx_regs[2], bytes);
+         offset += bytes;
+         memcpy(data+offset, &ptx_regs[3], bytes);
+         offset += bytes;
+         return 4;
+      }
+   } else {
+      ptx_reg_t ptx_reg = this->get_operand_value(src, dst, type, this, 1);
+      memcpy(data+offset, &ptx_reg, bytes);
+      offset += bytes;
+      return 1;
+   }
+}
+
+void ptx_thread_info::writeRegister(const warp_inst_t &inst, unsigned lane_id, char *data)
+{
+   const ptx_instruction *pI = m_func_info->get_instruction(inst.pc);
+
+   const operand_info &dst = pI->dst();
+
+   unsigned type = pI->get_type();
+
+   ptx_reg_t reg;
+   memory_space_t space = pI->get_space();
+   unsigned vector_spec = pI->get_vector();
+
+   size_t size;
+   int t;
+   type_info_key::type_decode(type,size,t);
+
+   // NOTE: converting the register values like below (casting to ull) may not
+   // work. It might keep some upper bits that are stale. see ptx_sim.h line 56
+
+   int offset = 0;
+   int bytes = size/8;
+
+   //reg.u64 = data[0];
+   memcpy(&reg, data, bytes);
+
+   if (!vector_spec) {
+      if( type == S16_TYPE || type == S32_TYPE ) {
+         sign_extend(reg,size,dst);
+      }
+      set_operand_value(dst,reg, type, this, pI);
+   } else {
+      ptx_reg_t data1, data2, data3, data4;
+      memcpy(&data1, data+offset, bytes);
+      offset += bytes;
+      memcpy(&data2, data+offset, bytes);
+      offset += bytes;
+      if (vector_spec != V2_TYPE) { //either V3 or V4
+         memcpy(&data3, data+offset, bytes);
+         offset += bytes;
+         if (vector_spec != V3_TYPE) { //v4
+            memcpy(&data4, data+offset, bytes);
+            offset += bytes;
+            set_vector_operand_values(dst,data1,data2,data3,data4);
+         } else { //v3
+            set_vector_operand_values(dst,data1,data2,data3,data3);
+         }
+      } else { //v2
+         set_vector_operand_values(dst,data1,data2,data2,data2);
+      }
+   }
+}
+
 void ptx_thread_info::ptx_exec_inst( warp_inst_t &inst, unsigned lane_id)
 {
     
@@ -1163,6 +1300,22 @@ void ptx_thread_info::ptx_exec_inst( warp_inst_t &inst, unsigned lane_id)
    const ptx_instruction *pI = m_func_info->get_instruction(pc);
    set_npc( pc + pI->inst_size() );
    
+   unsigned vector_spec = pI->get_vector();
+   if (vector_spec) {
+      if (vector_spec == V2_TYPE) {
+         inst.vectorLength = 2;
+      }
+      else if (vector_spec == V3_TYPE) {
+         inst.vectorLength = 3;
+      }
+      else {
+         assert(vector_spec == V4_TYPE);
+         inst.vectorLength = 4;
+      }
+   } else {
+      inst.vectorLength = 1;
+   }
+
 
    try {
 
@@ -1212,7 +1365,9 @@ void ptx_thread_info::ptx_exec_inst( warp_inst_t &inst, unsigned lane_id)
       }
       delete pJ;
       pI = pI_saved;
-      
+
+      m_gpu->gem5CudaGPU->getCudaCore(m_hw_sid)->record_inst(op_classification);
+
       // Run exit instruction if exit option included
       if(pI->is_exit())
          exit_impl(pI,this);
@@ -1329,6 +1484,12 @@ void ptx_thread_info::ptx_exec_inst( warp_inst_t &inst, unsigned lane_id)
       inst.set_addr(lane_id, insn_memaddr);
       inst.data_size = insn_data_size; // simpleAtomicIntrinsics
       assert( inst.memory_op == insn_memory_op );
+      if (insn_memory_op == memory_store && (insn_space == global_space || insn_space == const_space)) {
+         // Need to save data to be written for stores
+         uint8_t data[MAX_DATA_BYTES_PER_INSN_PER_THREAD];
+         readRegister(inst, lane_id, (char*)&data[0]);
+         inst.set_data(lane_id, data);
+      }
    } 
 
    } catch ( int x  ) {
@@ -1549,6 +1710,44 @@ void gpgpu_ptx_sim_register_global_variable(void *hostVar, const char *deviceNam
 {
    printf("GPGPU-Sim PTX registering global %s hostVar to name mapping\n", deviceName );
    g_global_name_lookup[hostVar] = deviceName;
+}
+
+std::string gpgpu_ptx_sim_hostvar_to_sym_name(const char *hostVar) {
+    // *Note: This code is largely copied from gpgpu_ptx_sim_memcpy_symbol
+    // to be used with gem5 memory system
+    printf("GPGPU-Sim PTX: starting gpgpu_ptx_sim_memcpy_symbol with hostVar 0x%p\n", hostVar);
+    bool found_sym = false;
+    std::string sym_name;
+
+    std::map<const void*,std::string>::iterator c=g_const_name_lookup.find(hostVar);
+    if ( c!=g_const_name_lookup.end() ) {
+       found_sym = true;
+       sym_name = c->second;
+    }
+    std::map<const void*,std::string>::iterator g=g_global_name_lookup.find(hostVar);
+    if ( g!=g_global_name_lookup.end() ) {
+       if ( found_sym ) {
+          printf("Execution error: PTX symbol \"%s\" w/ hostVar=0x%Lx is declared both const and global?\n",
+                 sym_name.c_str(), (unsigned long long)hostVar );
+          abort();
+       }
+       found_sym = true;
+       sym_name = g->second;
+    }
+    if( g_globals.find(hostVar) != g_globals.end() ) {
+       found_sym = true;
+       sym_name = hostVar;
+    }
+    if( g_constants.find(hostVar) != g_constants.end() ) {
+       found_sym = true;
+       sym_name = hostVar;
+    }
+
+    if ( !found_sym ) {
+       printf("Execution error: No information for PTX symbol w/ hostVar=0x%Lx\n", (unsigned long long)hostVar );
+       abort();
+    } else printf("GPGPU-Sim PTX: gpgpu_ptx_sim_memcpy_symbol: Found PTX symbol w/ hostVar=0x%Lx\n", (unsigned long long)hostVar );
+    return sym_name;
 }
 
 void gpgpu_ptx_sim_memcpy_symbol(const char *hostVar, const void *src, size_t count, size_t offset, int to, gpgpu_t *gpu )
@@ -1852,28 +2051,28 @@ struct gpgpu_ptx_sim_kernel_info get_ptxinfo_kinfo()
     return g_ptxinfo_kinfo;
 }
 
-void ptxinfo_function(const char *fname )
+extern "C" void ptxinfo_function(const char *fname )
 {
     clear_ptxinfo();
     g_ptxinfo_kname = strdup(fname);
 }
 
-void ptxinfo_regs( unsigned nregs )
+extern "C" void ptxinfo_regs( unsigned nregs )
 {
     g_ptxinfo_kinfo.regs=nregs;
 }
 
-void ptxinfo_lmem( unsigned declared, unsigned system )
+extern "C" void ptxinfo_lmem( unsigned declared, unsigned system )
 {
     g_ptxinfo_kinfo.lmem=declared+system;
 }
 
-void ptxinfo_smem( unsigned declared, unsigned system )
+extern "C" void ptxinfo_smem( unsigned declared, unsigned system )
 {
     g_ptxinfo_kinfo.smem=declared+system;
 }
 
-void ptxinfo_cmem( unsigned nbytes, unsigned bank )
+extern "C" void ptxinfo_cmem( unsigned nbytes, unsigned bank )
 {
     g_ptxinfo_kinfo.cmem+=nbytes;
 }

@@ -25,6 +25,8 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "gpu/gpgpu-sim/cuda_gpu.hh"
+
 #include "stream_manager.h"
 #include "gpgpusim_entrypoint.h"
 #include "cuda-sim/cuda-sim.h"
@@ -36,22 +38,17 @@ CUstream_st::CUstream_st()
 {
     m_pending = false;
     m_uid = sm_next_stream_uid++;
-    pthread_mutex_init(&m_lock,NULL);
 }
 
 bool CUstream_st::empty()
 {
-    pthread_mutex_lock(&m_lock);
     bool empty = m_operations.empty();
-    pthread_mutex_unlock(&m_lock);
     return empty;
 }
 
 bool CUstream_st::busy()
 {
-    pthread_mutex_lock(&m_lock);
     bool pending = m_pending;
-    pthread_mutex_unlock(&m_lock);
     return pending;
 }
 
@@ -60,44 +57,35 @@ void CUstream_st::synchronize()
     // called by host thread
     bool done=false;
     do{
-        pthread_mutex_lock(&m_lock);
         done = m_operations.empty();
-        pthread_mutex_unlock(&m_lock);
     } while ( !done );
 }
 
 void CUstream_st::push( const stream_operation &op )
 {
     // called by host thread
-    pthread_mutex_lock(&m_lock);
     m_operations.push_back( op );
-    pthread_mutex_unlock(&m_lock);
 }
 
 void CUstream_st::record_next_done()
 {
     // called by gpu thread
-    pthread_mutex_lock(&m_lock);
     assert(m_pending);
     m_operations.pop_front();
     m_pending=false;
-    pthread_mutex_unlock(&m_lock);
 }
 
 
 stream_operation CUstream_st::next()
 {
     // called by gpu thread
-    pthread_mutex_lock(&m_lock);
     m_pending = true;
     stream_operation result = m_operations.front();
-    pthread_mutex_unlock(&m_lock);
     return result;
 }
 
 void CUstream_st::print(FILE *fp)
 {
-    pthread_mutex_lock(&m_lock);
     fprintf(fp,"GPGPU-Sim API:    stream %u has %zu operations\n", m_uid, m_operations.size() );
     std::list<stream_operation>::iterator i;
     unsigned n=0;
@@ -107,7 +95,6 @@ void CUstream_st::print(FILE *fp)
         op.print(fp);
         fprintf(fp,"\n");
     }
-    pthread_mutex_unlock(&m_lock);
 }
 
 
@@ -117,38 +104,34 @@ void stream_operation::do_operation( gpgpu_sim *gpu )
         return;
 
     assert(!m_done && m_stream);
+    m_stream->setThreadContext(tc);
     if(g_debug_execution >= 3)
        printf("GPGPU-Sim API: stream %u performing ", m_stream->get_uid() );
     switch( m_type ) {
     case stream_memcpy_host_to_device:
         if(g_debug_execution >= 3)
             printf("memcpy host-to-device\n");
-        gpu->memcpy_to_gpu(m_device_address_dst,m_host_address_src,m_cnt);
-        m_stream->record_next_done();
+        gpu->gem5CudaGPU->memcpy((void *)m_host_address_src,(void *)m_device_address_dst,m_cnt, m_stream, m_type);
         break;
     case stream_memcpy_device_to_host:
         if(g_debug_execution >= 3)
             printf("memcpy device-to-host\n");
-        gpu->memcpy_from_gpu(m_host_address_dst,m_device_address_src,m_cnt);
-        m_stream->record_next_done();
+        gpu->gem5CudaGPU->memcpy((void *)m_device_address_src,m_host_address_dst,m_cnt, m_stream, m_type);
         break;
     case stream_memcpy_device_to_device:
         if(g_debug_execution >= 3)
             printf("memcpy device-to-device\n");
-        gpu->memcpy_gpu_to_gpu(m_device_address_dst,m_device_address_src,m_cnt); 
-        m_stream->record_next_done();
+        gpu->gem5CudaGPU->memcpy((void *)m_device_address_src,(void *)m_device_address_dst,m_cnt, m_stream, m_type);
         break;
     case stream_memcpy_to_symbol:
         if(g_debug_execution >= 3)
             printf("memcpy to symbol\n");
-        gpgpu_ptx_sim_memcpy_symbol(m_symbol,m_host_address_src,m_cnt,m_offset,1,gpu);
-        m_stream->record_next_done();
+        gpu->gem5CudaGPU->memcpy_to_symbol(m_symbol, m_host_address_src, m_cnt, m_offset, m_stream);
         break;
     case stream_memcpy_from_symbol:
         if(g_debug_execution >= 3)
             printf("memcpy from symbol\n");
-        gpgpu_ptx_sim_memcpy_symbol(m_symbol,m_host_address_dst,m_cnt,m_offset,0,gpu);
-        m_stream->record_next_done();
+        gpu->gem5CudaGPU->memcpy_from_symbol(m_host_address_dst, m_symbol, m_cnt, m_offset, m_stream);
         break;
     case stream_kernel_launch:
         if( gpu->can_start_kernel() ) {
@@ -156,16 +139,28 @@ void stream_operation::do_operation( gpgpu_sim *gpu )
         	printf("kernel \'%s\' transfer to GPU hardware scheduler\n", m_kernel->name().c_str() );
             if( m_sim_mode )
                 gpgpu_cuda_ptx_sim_main_func( *m_kernel );
-            else
+            else {
                 gpu->launch( m_kernel );
+                gpu->gem5CudaGPU->beginRunning(launchTime, m_stream);
+            }
         }
         break;
     case stream_event: {
         printf("event update\n");
         time_t wallclock = time((time_t *)NULL);
-        m_event->update( gpu_tot_sim_cycle, wallclock );
+        m_event->update( gpu_tot_sim_cycle, wallclock, gpu->gem5CudaGPU->getCurTick() );
+        if (m_event->needs_unblock()) {
+            gpu->gem5CudaGPU->unblockThread(NULL);
+            m_event->reset();
+        }
         m_stream->record_next_done();
+        gpu->gem5CudaGPU->scheduleStreamEvent();
         } 
+        break;
+    case stream_memset:
+        if(g_debug_execution >= 3)
+            printf("memset\n");
+        gpu->gem5CudaGPU->memset((Addr)m_device_address_dst, m_write_value, m_cnt, m_stream);
         break;
     default:
         abort();
@@ -186,6 +181,7 @@ void stream_operation::print( FILE *fp ) const
     case stream_memcpy_to_symbol: fprintf(fp,"memcpy to symbol"); break;
     case stream_memcpy_from_symbol: fprintf(fp,"memcpy from symbol"); break;
     case stream_no_op: fprintf(fp,"no-op"); break;
+    case stream_memset: fprintf(fp,"memset"); break;
     }
 }
 
@@ -194,18 +190,14 @@ stream_manager::stream_manager( gpgpu_sim *gpu, bool cuda_launch_blocking )
     m_gpu = gpu;
     m_service_stream_zero = false;
     m_cuda_launch_blocking = cuda_launch_blocking;
-    pthread_mutex_init(&m_lock,NULL);
 }
 
 bool stream_manager::operation( bool * sim)
 {
-    pthread_mutex_lock(&m_lock);
     bool check=check_finished_kernel();
     if(check)m_gpu->print_stats();
     stream_operation op =front();
     op.do_operation( m_gpu );
-    pthread_mutex_unlock(&m_lock);
-    //pthread_mutex_lock(&m_lock);
     // simulate a clock cycle on the GPU
     return check;
 }
@@ -271,18 +263,40 @@ stream_operation stream_manager::front()
     return result;
 }
 
+bool stream_manager::ready()
+{
+    bool ready = false;
+    if( concurrent_streams_empty() )
+        m_service_stream_zero = true;
+    if( m_service_stream_zero ) {
+        if( !m_stream_zero.empty() ) {
+            if( !m_stream_zero.busy() ) {
+                ready = true;
+            }
+        } else {
+            m_service_stream_zero = false;
+        }
+    } else {
+        std::list<struct CUstream_st*>::iterator s;
+        for( s=m_streams.begin(); s != m_streams.end(); s++) {
+            CUstream_st *stream = *s;
+            if( !stream->busy() && !stream->empty() ) {
+                ready = true;
+            }
+        }
+    }
+    return ready;
+}
+
 void stream_manager::add_stream( struct CUstream_st *stream )
 {
     // called by host thread
-    pthread_mutex_lock(&m_lock);
     m_streams.push_back(stream);
-    pthread_mutex_unlock(&m_lock);
 }
 
 void stream_manager::destroy_stream( CUstream_st *stream )
 {
     // called by host thread
-    pthread_mutex_lock(&m_lock);
     while( !stream->empty() )
         ; 
     std::list<CUstream_st *>::iterator s;
@@ -293,7 +307,6 @@ void stream_manager::destroy_stream( CUstream_st *stream )
         }
     }
     delete stream; 
-    pthread_mutex_unlock(&m_lock);
 }
 
 bool stream_manager::concurrent_streams_empty()
@@ -314,12 +327,10 @@ bool stream_manager::concurrent_streams_empty()
 bool stream_manager::empty_protected()
 {
     bool result = true;
-    pthread_mutex_lock(&m_lock);
     if( !concurrent_streams_empty() )
         result = false;
     if( !m_stream_zero.empty() )
         result = false;
-    pthread_mutex_unlock(&m_lock);
     return result;
 }
 
@@ -336,9 +347,7 @@ bool stream_manager::empty()
 
 void stream_manager::print( FILE *fp)
 {
-    pthread_mutex_lock(&m_lock);
     print_impl(fp);
-    pthread_mutex_unlock(&m_lock);
 }
 void stream_manager::print_impl( FILE *fp)
 {
@@ -357,15 +366,6 @@ void stream_manager::push( stream_operation op )
 {
     struct CUstream_st *stream = op.get_stream();
 
-    // block if stream 0 (or concurrency disabled) and pending concurrent operations exist
-    bool block= !stream || m_cuda_launch_blocking;
-    while(block) {
-        pthread_mutex_lock(&m_lock);
-        block = !concurrent_streams_empty();
-        pthread_mutex_unlock(&m_lock);
-    };
-
-    pthread_mutex_lock(&m_lock);
     if( stream && !m_cuda_launch_blocking ) {
         stream->push(op);
     } else {
@@ -374,18 +374,9 @@ void stream_manager::push( stream_operation op )
     }
     if(g_debug_execution >= 3)
        print_impl(stdout);
-    pthread_mutex_unlock(&m_lock);
-    if( m_cuda_launch_blocking || stream == NULL ) {
-        unsigned int wait_amount = 100; 
-        unsigned int wait_cap = 100000; // 100ms 
-        while( !empty() ) {
-            // sleep to prevent CPU hog by empty spin
-            // sleep time increased exponentially ensure fast response when needed 
-            usleep(wait_amount); 
-            wait_amount *= 2; 
-            if (wait_amount > wait_cap) 
-               wait_amount = wait_cap; 
-        }
+
+    if (ready()) {
+        m_gpu->gem5CudaGPU->scheduleStreamEvent();
     }
 }
 

@@ -28,8 +28,8 @@
 #ifndef _DragonFly_HPP_
 #define _DragonFly_HPP_
 
+#include "intersim2/routefunc.hpp"
 #include "network.hpp"
-#include "routefunc.hpp"
 
 class DragonFlyNew : public Network {
 

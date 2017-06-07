@@ -31,12 +31,12 @@
 #include <string>
 #include <vector>
 
-#include "timed_module.hpp"
-#include "flit.hpp"
-#include "credit.hpp"
-#include "flitchannel.hpp"
-#include "channel.hpp"
-#include "config_utils.hpp"
+#include "intersim2/channel.hpp"
+#include "intersim2/config_utils.hpp"
+#include "intersim2/credit.hpp"
+#include "intersim2/flit.hpp"
+#include "intersim2/flitchannel.hpp"
+#include "intersim2/timed_module.hpp"
 
 typedef Channel<Credit> CreditChannel;
 

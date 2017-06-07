@@ -28,6 +28,8 @@
 #ifndef ABSTRACT_HARDWARE_MODEL_INCLUDED
 #define ABSTRACT_HARDWARE_MODEL_INCLUDED
 
+struct CudaGPU;
+
 enum _memory_space_t {
    undefined_space=0,
    reg_space,
@@ -228,6 +230,12 @@ private:
 
    std::list<class ptx_thread_info *> m_active_threads;
    class memory_space *m_param_mem;
+
+   address_type m_inst_text_base_vaddr;
+
+public:
+   address_type get_inst_base_vaddr() { return m_inst_text_base_vaddr; };
+   void set_inst_base_vaddr(address_type addr) { m_inst_text_base_vaddr = addr; };
 };
 
 struct core_config {
@@ -423,7 +431,7 @@ private:
 
 class gpgpu_t {
 public:
-    gpgpu_t( const gpgpu_functional_sim_config &config );
+    gpgpu_t( const gpgpu_functional_sim_config &config, CudaGPU *cuda_gpu );
     void* gpu_malloc( size_t size );
     void* gpu_mallocarray( size_t count );
     void  gpu_memset( size_t dst_start_addr, int c, size_t count );
@@ -467,6 +475,10 @@ public:
 
     const gpgpu_functional_sim_config &get_config() const { return m_function_model_config; }
     FILE* get_ptx_inst_debug_file() { return ptx_inst_debug_file; }
+
+    // gem5 stuff
+    CudaGPU *gem5CudaGPU;
+    int sharedMemDelay;
 
 protected:
     const gpgpu_functional_sim_config &m_function_model_config;
@@ -766,6 +778,7 @@ enum divergence_support_t {
 };
 
 const unsigned MAX_ACCESSES_PER_INSN_PER_THREAD = 8;
+const unsigned MAX_DATA_BYTES_PER_INSN_PER_THREAD = 16;
 
 class warp_inst_t: public inst_t {
 public:
@@ -832,6 +845,16 @@ public:
         assert(num_addrs <= MAX_ACCESSES_PER_INSN_PER_THREAD);
         for(unsigned i=0; i<num_addrs; i++)
             m_per_scalar_thread[n].memreqaddr[i] = addr[i];
+    }
+    void set_data( unsigned n, const uint8_t *_data )
+    {
+        assert( op == STORE_OP );
+        assert( space == global_space || space == const_space );
+        assert( m_per_scalar_thread_valid );
+        assert( !m_per_scalar_thread[n].data_valid );
+        m_per_scalar_thread[n].data_valid = true;
+        assert( _data );
+        memcpy(&m_per_scalar_thread[n].data, _data, MAX_DATA_BYTES_PER_INSN_PER_THREAD);
     }
 
     struct transaction_info {
@@ -902,6 +925,12 @@ public:
         assert( m_per_scalar_thread_valid );
         return m_per_scalar_thread[n].memreqaddr[0];
     }
+    const uint8_t *get_data( unsigned n ) const
+    {
+        assert( m_per_scalar_thread_valid );
+        assert( m_per_scalar_thread[n].data_valid );
+        return &(m_per_scalar_thread[n].data[0]);
+    }
 
     bool isatomic() const { return m_isatomic; }
 
@@ -925,6 +954,7 @@ public:
 
     void print( FILE *fout ) const;
     unsigned get_uid() const { return m_uid; }
+    int vectorLength;
 
 protected:
 
@@ -945,9 +975,12 @@ protected:
         per_thread_info() {
             for(unsigned i=0; i<MAX_ACCESSES_PER_INSN_PER_THREAD; i++)
                 memreqaddr[i] = 0;
+            data_valid = false;
         }
         dram_callback_t callback;
         new_addr_type memreqaddr[MAX_ACCESSES_PER_INSN_PER_THREAD]; // effective address, upto 8 different requests (to support 32B access in 8 chunks of 4B each)
+        bool data_valid;
+        uint8_t data[MAX_DATA_BYTES_PER_INSN_PER_THREAD];
     };
     bool m_per_scalar_thread_valid;
     std::vector<per_thread_info> m_per_scalar_thread;
@@ -1003,6 +1036,7 @@ class core_t {
         void get_pdom_stack_top_info( unsigned warpId, unsigned *pc, unsigned *rpc ) const;
         kernel_info_t * get_kernel_info(){ return m_kernel;}
         unsigned get_warp_size() const { return m_warp_size; }
+        void writeRegister(const warp_inst_t &inst, unsigned warpSize, unsigned lane_id, char* data);
     protected:
         class gpgpu_sim *m_gpu;
         kernel_info_t *m_kernel;

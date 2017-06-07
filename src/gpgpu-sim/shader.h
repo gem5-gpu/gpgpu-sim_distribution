@@ -1088,6 +1088,17 @@ public:
     void flush();
     void writeback();
 
+    /// Inserts this instruction into the writeback stage of the pipeline
+    /// Returns true if successful, false if there is an instruction blocking
+    bool writebackInst(warp_inst_t &inst) {
+      if (m_next_wb.empty()) {
+        m_next_wb = inst;
+      } else if (m_next_wb.m_uid != inst.m_uid) {
+        return false; // WB reg full
+      }
+      return true;
+    }
+
     // accessors
     virtual unsigned clock_multiplier() const;
 
@@ -1142,6 +1153,7 @@ protected:
    bool constant_cycle( warp_inst_t &inst, mem_stage_stall_type &rc_fail, mem_stage_access_type &fail_type);
    bool texture_cycle( warp_inst_t &inst, mem_stage_stall_type &rc_fail, mem_stage_access_type &fail_type);
    bool memory_cycle( warp_inst_t &inst, mem_stage_stall_type &rc_fail, mem_stage_access_type &fail_type);
+   bool memory_cycle_gem5( warp_inst_t &inst, mem_stage_stall_type &rc_fail, mem_stage_access_type &fail_type);
 
    virtual mem_stage_stall_type process_cache_access( cache_t* cache,
                                                       new_addr_type address,
@@ -1572,6 +1584,7 @@ public:
     void cache_flush();
     void accept_fetch_response( mem_fetch *mf );
     void accept_ldst_unit_response( class mem_fetch * mf );
+    bool ldst_unit_wb_inst(warp_inst_t &inst) { return m_ldst_unit->writebackInst(inst); }
     void set_kernel( kernel_info_t *k ) 
     {
         assert(k);
@@ -1580,7 +1593,13 @@ public:
         printf("GPGPU-Sim uArch: Shader %d bind to kernel %u \'%s\'\n", m_sid, m_kernel->get_uid(),
                  m_kernel->name().c_str() );
     }
-   
+
+    // Callback from gem5
+    bool m_kernel_finishing;
+    void start_kernel_finish();
+    void finish_kernel();
+    bool kernel_finish_issued() { return m_kernel_finishing; }
+
     // accessors
     bool fetch_unit_response_buffer_full() const;
     bool ldst_unit_response_buffer_full() const;
@@ -1625,6 +1644,8 @@ public:
 // debug:
     void display_simt_state(FILE *fout, int mask ) const;
     void display_pipeline( FILE *fout, int print_mem, int mask3bit ) const;
+
+    unsigned get_sid() { return m_sid; }
 
     void incload_stat() {m_stats->m_num_loadqueued_insn[m_sid]++;}
     void incstore_stat() {m_stats->m_num_storequeued_insn[m_sid]++;}
@@ -1730,6 +1751,7 @@ public:
 	 void inc_simt_to_mem(unsigned n_flits){ m_stats->n_simt_to_mem[m_sid] += n_flits; }
 
 private:
+     friend class ldst_unit;
 	 unsigned inactive_lanes_accesses_sfu(unsigned active_count,double latency){
       return  ( ((32-active_count)>>1)*latency) + ( ((32-active_count)>>3)*latency) + ( ((32-active_count)>>3)*latency);
 	 }
@@ -1870,6 +1892,8 @@ public:
     void get_L1T_sub_stats(struct cache_sub_stats &css) const;
 
     void get_icnt_stats(long &n_simt_to_mem, long &n_mem_to_simt) const;
+
+    shader_core_ctx *get_core(int id_in_cluster) { return m_core[id_in_cluster]; }
 
 private:
     unsigned m_cluster_id;

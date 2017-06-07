@@ -35,18 +35,18 @@
 #include <cassert>
 #include <sstream>
 
-#include "booksim.hpp"
+#include "intersim2/booksim.hpp"
 #include "network.hpp"
 
-#include "kncube.hpp"
-#include "fly.hpp"
+#include "anynet.hpp"
 #include "cmesh.hpp"
+#include "dragonfly.hpp"
+#include "fattree.hpp"
 #include "flatfly_onchip.hpp"
+#include "fly.hpp"
+#include "kncube.hpp"
 #include "qtree.hpp"
 #include "tree4.hpp"
-#include "fattree.hpp"
-#include "anynet.hpp"
-#include "dragonfly.hpp"
 
 
 Network::Network( const Configuration &config, const string & name ) :

@@ -31,16 +31,15 @@
 #include <vector>
 #include <deque>
 
-#include "module.hpp"
-#include "flit.hpp"
-#include "credit.hpp"
-#include "router.hpp"
-#include "module.hpp"
-#include "timed_module.hpp"
-#include "flitchannel.hpp"
-#include "channel.hpp"
-#include "config_utils.hpp"
-#include "globals.hpp"
+#include "intersim2/credit.hpp"
+#include "intersim2/channel.hpp"
+#include "intersim2/config_utils.hpp"
+#include "intersim2/flit.hpp"
+#include "intersim2/flitchannel.hpp"
+#include "intersim2/globals.hpp"
+#include "intersim2/module.hpp"
+#include "intersim2/timed_module.hpp"
+#include "intersim2/routers/router.hpp"
 
 typedef Channel<Credit> CreditChannel;
 

@@ -25,7 +25,7 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "booksim.hpp"
+#include "intersim2/booksim.hpp"
 #include <cassert>
 
 #include "prio_arb.hpp"

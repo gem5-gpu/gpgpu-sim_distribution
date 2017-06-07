@@ -31,13 +31,13 @@
  *
  */
 
-#include "booksim.hpp"
 #include <vector>
 #include <sstream>
+
+#include "intersim2/booksim.hpp"
+#include "intersim2/misc_utils.hpp"
+#include "intersim2/random_utils.hpp"
 #include "kncube.hpp"
-#include "random_utils.hpp"
-#include "misc_utils.hpp"
- //#include "iq_router.hpp"
 
 
 KNCube::KNCube( const Configuration &config, const string & name, bool mesh ) :

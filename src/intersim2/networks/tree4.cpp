@@ -44,13 +44,13 @@
 // 
 ////////////////////////////////////////////////////////////////////////
 
-#include "booksim.hpp"
 #include <vector>
 #include <sstream>
 #include <cmath>
 
+#include "intersim2/booksim.hpp"
+#include "intersim2/misc_utils.hpp"
 #include "tree4.hpp"
-#include "misc_utils.hpp"
 
 Tree4::Tree4( const Configuration& config, const string & name )
 : Network ( config, name )

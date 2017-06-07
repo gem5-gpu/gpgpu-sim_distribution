@@ -36,6 +36,10 @@
 #include "option_parser.h"
 #include <algorithm>
 
+#include "gpu/gpgpu-sim/cuda_gpu.hh"
+
+extern gpgpu_sim *g_the_gpu;
+
 unsigned mem_access_t::sm_next_access_uid = 0;   
 unsigned warp_inst_t::sm_next_uid = 0;
 
@@ -89,10 +93,10 @@ void gpgpu_functional_sim_config::ptx_set_tex_cache_linesize(unsigned linesize)
    m_texcache_linesize = linesize;
 }
 
-gpgpu_t::gpgpu_t( const gpgpu_functional_sim_config &config )
-    : m_function_model_config(config)
+gpgpu_t::gpgpu_t( const gpgpu_functional_sim_config &config, CudaGPU *cuda_gpu )
+    : gem5CudaGPU(cuda_gpu), m_function_model_config(config)
 {
-   m_global_mem = new memory_space_impl<8192>("global",64*1024);
+   m_global_mem = NULL; // Accesses to global memory should go through gem5-gpu
    m_tex_mem = new memory_space_impl<8192>("tex",64*1024);
    m_surf_mem = new memory_space_impl<8192>("surf",64*1024);
 
@@ -100,6 +104,12 @@ gpgpu_t::gpgpu_t( const gpgpu_functional_sim_config &config )
 
    if(m_function_model_config.get_ptx_inst_debug_to_file() != 0) 
       ptx_inst_debug_file = fopen(m_function_model_config.get_ptx_inst_debug_file(), "w");
+
+   if(cuda_gpu) {
+       sharedMemDelay = cuda_gpu->getSharedMemDelay();
+   } else {
+       sharedMemDelay = 1;
+   }
 }
 
 address_type line_size_based_tag_func(new_addr_type address, new_addr_type line_size)
@@ -173,6 +183,9 @@ void warp_inst_t::generate_mem_accesses()
         return; 
     if( m_warp_active_mask.count() == 0 ) 
         return; // predicated off
+    // In gem5-gpu, global and const references go through the gem5-gpu LSQ
+    if( space.get_type() == global_space || space.get_type() == const_space )
+        return;
 
     const size_t starting_queue_size = m_accessq.size();
 
@@ -183,13 +196,13 @@ void warp_inst_t::generate_mem_accesses()
 
     mem_access_type access_type;
     switch (space.get_type()) {
-    case const_space:
     case param_space_kernel: 
         access_type = CONST_ACC_R; 
         break;
     case tex_space: 
         access_type = TEXTURE_ACC_R;   
         break;
+    case const_space:
     case global_space:       
         access_type = is_write? GLOBAL_ACC_W: GLOBAL_ACC_R;   
         break;
@@ -286,7 +299,7 @@ void warp_inst_t::generate_mem_accesses()
             }
         }
         assert( total_accesses > 0 && total_accesses <= m_config->warp_size );
-        cycles = total_accesses; // shared memory conflicts modeled as larger initiation interval 
+        cycles = total_accesses * g_the_gpu->sharedMemDelay; // shared memory conflicts modeled as larger initiation interval
         ptx_file_line_stats_add_smem_bank_conflict( pc, total_accesses );
         break;
     }
@@ -294,11 +307,11 @@ void warp_inst_t::generate_mem_accesses()
     case tex_space: 
         cache_block_size = m_config->gpgpu_cache_texl1_linesize;
         break;
-    case const_space:  case param_space_kernel:
+    case param_space_kernel:
         cache_block_size = m_config->gpgpu_cache_constl1_linesize; 
         break;
 
-    case global_space: case local_space: case param_space_local:
+    case const_space: case global_space: case local_space: case param_space_local:
         if( m_config->gpgpu_coalesce_arch == 13 ) {
            if(isatomic())
                memory_coalescing_arch_13_atomic(is_write, access_type);
@@ -759,6 +772,12 @@ void core_t::execute_warp_inst_t(warp_inst_t &inst, unsigned warpId)
             checkExecutionStatusAndUpdate(inst,t,tid);
         }
     } 
+}
+
+void core_t::writeRegister(const warp_inst_t &inst, unsigned warpSize, unsigned lane_id, char *data) {
+    assert(inst.active(lane_id));
+    int warpId = inst.warp_id();
+    m_thread[warpSize*warpId+lane_id]->writeRegister(inst, lane_id, data);
 }
   
 bool  core_t::ptx_thread_done( unsigned hw_thread_id ) const  

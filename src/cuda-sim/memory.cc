@@ -107,7 +107,7 @@ template<unsigned BSIZE> void memory_space_impl<BSIZE>::read_single_block( mem_a
    }
 }
 
-template<unsigned BSIZE> void memory_space_impl<BSIZE>::read( mem_addr_t addr, size_t length, void *data ) const
+template<unsigned BSIZE> void memory_space_impl<BSIZE>::read( mem_addr_t addr, size_t length, void *data, ptx_thread_info *thd, const ptx_instruction *pI ) const
 {
    mem_addr_t index = addr >> m_log2_block_size;
    if ((addr+length) <= (index+1)*BSIZE ) {

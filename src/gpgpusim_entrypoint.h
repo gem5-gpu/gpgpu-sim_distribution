@@ -29,6 +29,7 @@
 #define GPGPUSIM_ENTRYPOINT_H_INCLUDED
 
 #include "abstract_hardware_model.h"
+#include "stream_manager.h"
 
 #include <time.h>
 extern time_t g_simulation_starttime;
@@ -36,7 +37,7 @@ extern time_t g_simulation_starttime;
 
 
 class gpgpu_sim *gpgpu_ptx_sim_init_perf();
-void start_sim_thread(int api);
+class gpgpu_sim *gem5_ptx_sim_init_perf(stream_manager **p_stream_manager, CudaGPU *cuda_gpu, const char *config_path);
 
 int gpgpu_opencl_ptx_sim_main_perf( kernel_info_t *grid );
 int gpgpu_opencl_ptx_sim_main_func( kernel_info_t *grid );

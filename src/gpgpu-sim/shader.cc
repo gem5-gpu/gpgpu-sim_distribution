@@ -26,6 +26,8 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "gpu/gpgpu-sim/cuda_gpu.hh"
+
 #include <float.h>
 #include "shader.h"
 #include "gpu-sim.h"
@@ -33,6 +35,7 @@
 #include "dram.h"
 #include "stat-tool.h"
 #include "gpu-misc.h"
+#include "gpu-cache_gem5.h"
 #include "../cuda-sim/ptx_sim.h"
 #include "../cuda-sim/ptx-stats.h"
 #include "../cuda-sim/cuda-sim.h"
@@ -51,6 +54,8 @@
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define MIN(a,b) (((a)<(b))?(a):(b))
     
+
+extern gpgpu_sim *g_the_gpu;
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -76,6 +81,7 @@ shader_core_ctx::shader_core_ctx( class gpgpu_sim *gpu,
      m_barriers( config->max_warps_per_shader, config->max_cta_per_core ),
      m_dynamic_warp_id(0)
 {
+    m_kernel_finishing = false;
     m_cluster = cluster;
     m_config = config;
     m_memory_config = mem_config;
@@ -117,7 +123,7 @@ shader_core_ctx::shader_core_ctx( class gpgpu_sim *gpu,
     #define STRSIZE 1024
     char name[STRSIZE];
     snprintf(name, STRSIZE, "L1I_%03d", m_sid);
-    m_L1I = new read_only_cache( name,m_config->m_L1I_config,m_sid,get_shader_instruction_cache_id(),m_icnt,IN_L1I_MISS_QUEUE);
+    m_L1I = new l1icache_gem5(m_gpu, name, m_config->m_L1I_config, m_sid, get_shader_instruction_cache_id(), m_icnt, IN_L1I_MISS_QUEUE);
     
     m_warp.resize(m_config->max_warps_per_shader, shd_warp_t(this, warp_size));
     m_scoreboard = new Scoreboard(m_sid, m_config->max_warps_per_shader);
@@ -623,7 +629,10 @@ void shader_core_ctx::fetch()
             // this code fetches instructions from the i-cache or generates memory requests
             if( !m_warp[warp_id].functional_done() && !m_warp[warp_id].imiss_pending() && m_warp[warp_id].ibuffer_empty() ) {
                 address_type pc  = m_warp[warp_id].get_pc();
-                address_type ppc = pc + PROGRAM_MEM_START;
+                // Use the instruction base virtual address specified in
+                // the kernel that is currently scheduled to this shader
+                address_type ppc = pc + m_kernel->get_inst_base_vaddr();
+
                 unsigned nbytes=16; 
                 unsigned offset_in_block = pc & (m_config->m_L1I_config.get_line_sz()-1);
                 if( (offset_in_block+nbytes) > m_config->m_L1I_config.get_line_sz() )
@@ -1298,7 +1307,8 @@ ldst_unit::process_cache_access( cache_t* cache,
     if( write_sent ) 
         m_core->inc_store_req( inst.warp_id() );
     if ( status == HIT ) {
-        assert( !read_sent );
+        // HACK for gem5-gpu: Reads should not be sent with hit status
+        if (read_sent) assert( !read_sent );
         inst.accessq_pop_back();
         if ( inst.is_load() ) {
             for ( unsigned r=0; r < 4; r++)
@@ -1309,7 +1319,8 @@ ldst_unit::process_cache_access( cache_t* cache,
             delete mf;
     } else if ( status == RESERVATION_FAIL ) {
         result = COAL_STALL;
-        assert( !read_sent );
+        // HACK for gem5-gpu: Reads should not be sent with reservation_fail status
+        if (read_sent) assert( !read_sent );
         assert( !write_sent );
         delete mf;
     } else {
@@ -1340,7 +1351,7 @@ mem_stage_stall_type ldst_unit::process_memory_access_queue( cache_t *cache, war
 
 bool ldst_unit::constant_cycle( warp_inst_t &inst, mem_stage_stall_type &rc_fail, mem_stage_access_type &fail_type)
 {
-   if( inst.empty() || ((inst.space.get_type() != const_space) && (inst.space.get_type() != param_space_kernel)) )
+   if( inst.empty() || (inst.space.get_type() != param_space_kernel) )
        return true;
    if( inst.active_count() == 0 ) 
        return true;
@@ -1426,6 +1437,49 @@ bool ldst_unit::memory_cycle( warp_inst_t &inst, mem_stage_stall_type &stall_rea
    return inst.accessq_empty(); 
 }
 
+bool ldst_unit::memory_cycle_gem5( warp_inst_t &inst, mem_stage_stall_type &stall_reason, mem_stage_access_type &access_type )
+{
+    if( inst.empty()) {
+        return true;
+    }
+    if (inst.space.get_type() != global_space && inst.space.get_type() != const_space) {
+        return memory_cycle(inst, stall_reason, access_type);
+    }
+    if( inst.active_count() == 0 ) {
+        return true;
+    }
+
+    // GPGPU-Sim should NOT have generated accesses for gem5-gpu requests
+    assert( inst.accessq_empty() );
+    mem_stage_stall_type stall_cond = NO_RC_FAIL;
+
+    bool rc_fail = m_core->get_gpu()->gem5CudaGPU->getCudaCore(m_core->m_sid)->executeMemOp(inst);
+
+    if (rc_fail) {
+        stall_cond = ICNT_RC_FAIL;
+    } else {
+        if( inst.is_load() ) {
+            for( unsigned r=0; r < 4; r++) {
+                if(inst.out[r] > 0) {
+                    m_pending_writes[inst.warp_id()][inst.out[r]]++;
+                }
+            }
+        }
+    }
+
+    if (stall_cond != NO_RC_FAIL) {
+        stall_reason = stall_cond;
+        bool iswrite = inst.is_store();
+        if (inst.space.is_local()) {
+            access_type = (iswrite)?L_MEM_ST:L_MEM_LD;
+        } else {
+            access_type = (iswrite)?G_MEM_ST:G_MEM_LD;
+        }
+        return false;
+    }
+    
+    return true;
+}
 
 bool ldst_unit::response_buffer_full() const
 {
@@ -1658,8 +1712,10 @@ void ldst_unit::writeback()
 {
     // process next instruction that is going to writeback
     if( !m_next_wb.empty() ) {
+        // If you can write into the RF (bank conflict logic)
         if( m_operand_collector->writeback(m_next_wb) ) {
             bool insn_completed = false; 
+            // for each output register (up to 4 for vectors)
             for( unsigned r=0; r < 4; r++ ) {
                 if( m_next_wb.out[r] > 0 ) {
                     if( m_next_wb.space.get_type() != shared_space ) {
@@ -1680,6 +1736,8 @@ void ldst_unit::writeback()
                 m_core->warp_inst_complete(m_next_wb);
             }
             m_next_wb.clear();
+            // signal gem5 that the wb hazard has cleared
+            m_core->get_gpu()->gem5CudaGPU->getCudaCore(m_core->m_sid)->writebackClear();
             m_last_inst_gpu_sim_cycle = gpu_sim_cycle;
             m_last_inst_gpu_tot_sim_cycle = gpu_tot_sim_cycle;
         }
@@ -1836,7 +1894,7 @@ void ldst_unit::cycle()
    done &= shared_cycle(pipe_reg, rc_fail, type);
    done &= constant_cycle(pipe_reg, rc_fail, type);
    done &= texture_cycle(pipe_reg, rc_fail, type);
-   done &= memory_cycle(pipe_reg, rc_fail, type);
+   done &= memory_cycle_gem5(pipe_reg, rc_fail, type);
    m_mem_rc = rc_fail;
 
    if (!done) { // log stall types and return
@@ -1900,23 +1958,34 @@ void shader_core_ctx::register_cta_thread_exit( unsigned cta_num )
       m_n_active_cta--;
       m_barriers.deallocate_barrier(cta_num);
       shader_CTA_count_unlog(m_sid, 1);
-      printf("GPGPU-Sim uArch: Shader %d finished CTA #%d (%lld,%lld), %u CTAs running\n", m_sid, cta_num, gpu_sim_cycle, gpu_tot_sim_cycle,
-             m_n_active_cta );
-      if( m_n_active_cta == 0 ) {
-          assert( m_kernel != NULL );
-          m_kernel->dec_running();
-          printf("GPGPU-Sim uArch: Shader %u empty (release kernel %u \'%s\').\n", m_sid, m_kernel->get_uid(),
-                 m_kernel->name().c_str() );
-          if( m_kernel->no_more_ctas_to_run() ) {
-              if( !m_kernel->running() ) {
-                  printf("GPGPU-Sim uArch: GPU detected kernel \'%s\' finished on shader %u.\n", m_kernel->name().c_str(), m_sid );
-                  m_gpu->set_kernel_done( m_kernel );
-              }
-          }
-          m_kernel=NULL;
-          fflush(stdout);
-      }
+//      printf("GPGPU-Sim uArch: Shader %d finished CTA #%d (%lld,%lld), %u CTAs running\n", m_sid, cta_num, gpu_sim_cycle, gpu_tot_sim_cycle,
+//             m_n_active_cta );
+      m_gpu->gem5CudaGPU->getCudaCore(m_sid)->record_block_commit(cta_num);
    }
+}
+
+void shader_core_ctx::start_kernel_finish()
+{
+    assert(!m_kernel_finishing);
+    m_kernel_finishing = true;
+    m_gpu->gem5CudaGPU->getCudaCore(m_sid)->finishKernel();
+}
+
+void shader_core_ctx::finish_kernel()
+{
+  assert( m_kernel != NULL );
+  m_kernel->dec_running();
+  printf("GPGPU-Sim uArch: Shader %u empty (release kernel %u \'%s\').\n", m_sid, m_kernel->get_uid(),
+         m_kernel->name().c_str() );
+  if( m_kernel->no_more_ctas_to_run() ) {
+      if( !m_kernel->running() ) {
+          printf("GPGPU-Sim uArch: GPU detected kernel \'%s\' finished on shader %u.\n", m_kernel->name().c_str(), m_sid );
+          m_gpu->set_kernel_done( m_kernel );
+      }
+  }
+  m_kernel=NULL;
+  m_kernel_finishing = false;
+  fflush(stdout);
 }
 
 void gpgpu_sim::shader_print_runtime_stat( FILE *fout ) 
@@ -2602,7 +2671,7 @@ void barrier_set_t::warp_exit( unsigned warp_id )
    // test for barrier release 
    cta_to_warp_t::iterator w=m_cta_to_warps.begin(); 
    for (; w != m_cta_to_warps.end(); ++w) {
-      if (w->second.test(warp_id) == true) break; 
+      if (w->second.test(warp_id) == true) break;
    }
    warp_set_t warps_in_cta = w->second;
    warp_set_t at_barrier = warps_in_cta & m_warp_at_barrier;
@@ -3158,6 +3227,12 @@ unsigned simt_core_cluster::issue_block2core()
             num_blocks_issued++;
             m_cta_issue_next_core=core; 
             break;
+        }
+    }
+    for (unsigned i = 0; i < m_config->n_simt_cores_per_cluster; i++) {
+        kernel_info_t *kernel = m_core[i]->get_kernel();
+        if (kernel && kernel->no_more_ctas_to_run() && (m_core[i]->get_n_active_cta() == 0) && !m_core[i]->kernel_finish_issued()) {
+            m_core[i]->start_kernel_finish();
         }
     }
     return num_blocks_issued;

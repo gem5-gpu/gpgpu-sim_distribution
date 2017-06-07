@@ -31,11 +31,10 @@
 //
 // ----------------------------------------------------------------------
 
-#include "separable.hpp"
-
 #include <sstream>
 
-#include "arbiter.hpp"
+#include "intersim2/arbiters/arbiter.hpp"
+#include "separable.hpp"
 
 SeparableAllocator::SeparableAllocator( Module* parent, const string& name,
 					int inputs, int outputs,

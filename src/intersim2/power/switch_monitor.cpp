@@ -25,9 +25,8 @@
  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include "intersim2/flit.hpp"
 #include "switch_monitor.hpp"
-
-#include "flit.hpp"
 
 SwitchMonitor::SwitchMonitor( int inputs, int outputs, int classes )
 : _cycles(0), _inputs(inputs), _outputs(outputs), _classes(classes) {

@@ -31,9 +31,9 @@
 #include <cstdlib>
 #include <cassert>
 
+#include "intersim2/globals.hpp"
+#include "intersim2/stats.hpp"
 #include "event_router.hpp"
-#include "stats.hpp"
-#include "globals.hpp"
 
 EventRouter::EventRouter( const Configuration& config,
 		    Module *parent, const string & name, int id,

@@ -45,15 +45,15 @@
 
 #include <sstream>
 #include "booksim.hpp"
+#include "booksim_config.hpp"
+#include "injection.hpp"
+#include "interconnect_interface.hpp"
 #include "routefunc.hpp"
 #include "traffic.hpp"
-#include "booksim_config.hpp"
 #include "trafficmanager.hpp"
 #include "random_utils.hpp"
-#include "network.hpp"
-#include "injection.hpp"
-#include "power_module.hpp"
-#include "interconnect_interface.hpp"
+#include "networks/network.hpp"
+#include "power/power_module.hpp"
 
 ///////////////////////////////////////////////////////////////////////////////
 //Global declarations

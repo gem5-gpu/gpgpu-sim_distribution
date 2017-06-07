@@ -30,10 +30,10 @@
 
 #include <map>
 
-#include "module.hpp"
-#include "network.hpp"
-#include "config_utils.hpp"
-#include "flitchannel.hpp"
+#include "intersim2/config_utils.hpp"
+#include "intersim2/flitchannel.hpp"
+#include "intersim2/module.hpp"
+#include "intersim2/networks/network.hpp"
 #include "switch_monitor.hpp"
 #include "buffer_monitor.hpp"
 

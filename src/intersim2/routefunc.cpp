@@ -42,13 +42,13 @@
 
 #include "booksim.hpp"
 #include "routefunc.hpp"
-#include "kncube.hpp"
 #include "random_utils.hpp"
 #include "misc_utils.hpp"
-#include "fattree.hpp"
-#include "tree4.hpp"
-#include "qtree.hpp"
-#include "cmesh.hpp"
+#include "networks/cmesh.hpp"
+#include "networks/fattree.hpp"
+#include "networks/kncube.hpp"
+#include "networks/qtree.hpp"
+#include "networks/tree4.hpp"
 
 
 

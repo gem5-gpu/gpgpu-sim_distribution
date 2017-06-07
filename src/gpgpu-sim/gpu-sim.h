@@ -39,7 +39,6 @@
 #include <stdio.h>
 
 
-
 // constants for statistics printouts
 #define GPU_RSTAT_SHD_INFO 0x1
 #define GPU_RSTAT_BW_STAT  0x2
@@ -364,7 +363,7 @@ private:
 
 class gpgpu_sim : public gpgpu_t {
 public:
-   gpgpu_sim( const gpgpu_sim_config &config );
+   gpgpu_sim( const gpgpu_sim_config &config, CudaGPU *cuda_gpu = NULL );
 
    void set_prop( struct cudaDeviceProp *prop );
 
@@ -374,7 +373,12 @@ public:
    void set_kernel_done( kernel_info_t *kernel );
 
    void init();
-   void cycle();
+   void core_cycle_start();
+   void core_cycle_end();
+   void icnt_cycle_start();
+   void icnt_cycle_end();
+   void l2_cycle();
+   void dram_cycle();
    bool active(); 
    void print_stats();
    void update_stats();
@@ -396,6 +400,8 @@ public:
    const gpgpu_sim_config &get_config() const { return m_config; }
    void gpu_print_stat();
    void dump_pipeline( int mask, int s, int m ) const;
+
+   shader_core_ctx* get_shader(int id);
 
    //The next three functions added to be used by the functional simulation function
    
@@ -423,7 +429,6 @@ public:
 private:
    // clocks
    void reinit_clock_domains(void);
-   int  next_clock_domain(void);
    void issue_block2core();
    void print_dram_stats(FILE *fout) const;
    void shader_print_runtime_stat( FILE *fout );

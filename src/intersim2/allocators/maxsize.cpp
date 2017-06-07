@@ -29,9 +29,9 @@
   POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "booksim.hpp"
 #include <iostream>
 
+#include "intersim2/booksim.hpp"
 #include "maxsize.hpp"
 
 // shortest augmenting path:
