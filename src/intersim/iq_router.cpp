@@ -341,10 +341,8 @@ void IQRouter::_VCAlloc( )
    int         match_vc;
 
    Flit        *f;
-   bool        watched;
 
    _vc_allocator->Clear( );
-   watched = false;
 
    for ( int input = 0; input < _inputs; ++input ) {
       for ( int vc = 0; vc < _vcs; ++vc ) {
@@ -359,7 +357,6 @@ void IQRouter::_VCAlloc( )
                cout << "VC requesting allocation at " << _fullname << endl;
                cout << "  input_index = " << input*_vcs + vc << endl;
                cout << *f;
-               watched = true;
             }
 
             _AddVCRequests( cur_vc, input*_vcs + vc, f->watch );
@@ -407,12 +404,11 @@ void IQRouter::_SWAlloc( )
    Flit        *f;
    Credit      *c;
 
-   VC          *cur_vc;
-   BufferState *dest_vc;
+   VC          *cur_vc = NULL;
+   BufferState *dest_vc = NULL;
 
    int input;
-   int output;
-   int vc;
+   int vc = -1;
 
    int expanded_input;
    int expanded_output;
@@ -503,7 +499,6 @@ void IQRouter::_SWAlloc( )
          }
 
          if ( expanded_output >= 0 ) {
-            output = expanded_output % _outputs;
 
             if ( _switch_hold_in[expanded_input] == -1 ) {
                vc = _sw_allocator->ReadRequest( expanded_input, expanded_output );

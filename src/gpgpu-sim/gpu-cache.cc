@@ -215,9 +215,9 @@ enum cache_request_status tag_array::access( new_addr_type addr, unsigned time, 
 void tag_array::fill( new_addr_type addr, unsigned time )
 {
     assert( m_config.m_alloc_policy == ON_FILL );
-    unsigned idx;
+    unsigned idx = 0;
     enum cache_request_status status = probe(addr,idx);
-    assert(status==MISS); // MSHR should have prevented redundant memory request
+    if(status!=MISS) assert(status==MISS); // MSHR should have prevented redundant memory request
     m_lines[idx].allocate( m_config.tag(addr), m_config.block_addr(addr), time );
     m_lines[idx].fill(time);
 }

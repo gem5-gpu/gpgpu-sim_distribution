@@ -194,7 +194,7 @@ void warp_inst_t::generate_mem_accesses()
 
     bool is_write = is_store();
 
-    mem_access_type access_type;
+    mem_access_type access_type = NUM_MEM_ACCESS_TYPE;
     switch (space.get_type()) {
     case param_space_kernel: 
         access_type = CONST_ACC_R; 
@@ -568,6 +568,8 @@ kernel_info_t::kernel_info_t( dim3 gridDim, dim3 blockDim, class function_info *
 kernel_info_t::~kernel_info_t()
 {
     assert( m_active_threads.empty() );
+// @TODO: Need to clean up arguments to kernel, but this causes segfault
+//    if (m_kernel_entry) delete m_kernel_entry;
     delete m_param_mem;
 }
 

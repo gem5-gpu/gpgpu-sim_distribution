@@ -91,7 +91,7 @@ Router_gpgpu *Router_gpgpu::NewRouter( const Configuration& config,
                            Module *parent, string name, int id,
                            int inputs, int outputs )
 {
-   Router_gpgpu *r;
+   Router_gpgpu *r = NULL;
    string type;
 
    config.GetStr( "router", type );

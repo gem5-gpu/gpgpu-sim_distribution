@@ -423,12 +423,11 @@ public:
     {
         unsigned inner_level_readin;
         unsigned outer_level_readin; 
-        int ret = sscanf( config_str,
-                          "two_level_active:%d:%d:%d",
-                          &m_max_active_warps,
-                          &inner_level_readin,
-                          &outer_level_readin);
-        assert( 3 == ret );
+        assert( 3 == sscanf( config_str,
+                "two_level_active:%d:%d:%d",
+                &m_max_active_warps,
+                &inner_level_readin,
+                &outer_level_readin) );
         m_inner_level_prioritization=(scheduler_prioritization_type)inner_level_readin;
         m_outer_level_prioritization=(scheduler_prioritization_type)outer_level_readin;
     }

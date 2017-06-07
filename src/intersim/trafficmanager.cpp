@@ -882,7 +882,7 @@ void TrafficManager::_ClearStats( )
 
 int TrafficManager::_ComputeAccepted( double *avg, double *min ) const 
 {
-   int dmin;
+   int dmin = -1;
 
    *min = 1.0;
    *avg = 0.0;
@@ -943,7 +943,6 @@ bool TrafficManager::_SingleSim( )
    int  iter;
    int  total_phases;
    int  converged;
-   int  max_outstanding;
    int  empty_steps;
 
    double cur_latency;
@@ -984,7 +983,6 @@ bool TrafficManager::_SingleSim( )
    warmup_threshold       = 0.05;
    iter            = 0;
    converged       = 0;
-   max_outstanding = 0;
    total_phases    = 0;
 
    // warm-up ...

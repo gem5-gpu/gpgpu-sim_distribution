@@ -258,7 +258,7 @@ ptx_reg_t ptx_thread_info::get_operand_value( const operand_info &op, operand_in
          finalResult.f64 = -finalResult.f64;
          break;
       default:
-         assert(0);
+         assert(0); break;
       }
 
    }
@@ -274,7 +274,7 @@ unsigned get_operand_nbits( const operand_info &op )
       const type_info *typ = sym->type();
       type_info_key t = typ->get_key();
       switch( t.scalar_type() ) {
-      case PRED_TYPE: 
+      case PRED_TYPE:
          return 1;
       case B8_TYPE: case S8_TYPE: case U8_TYPE:
          return 8;
@@ -287,7 +287,7 @@ unsigned get_operand_nbits( const operand_info &op )
       default:
          printf("ERROR: unknown register type\n");
          fflush(stdout);
-         abort();
+         abort(); break;
       }
    } else {
       printf("ERROR: Need to implement get_operand_nbits() for currently unsupported operand_info type\n");
@@ -319,7 +319,7 @@ void sign_extend( ptx_reg_t &data, unsigned src_size, const operand_info &dst )
    if( !dst.is_reg() )
       return;
    unsigned dst_size = get_operand_nbits( dst );
-   if( src_size >= dst_size ) 
+   if( src_size >= dst_size )
       return;
    // src_size < dst_size
    unsigned long long mask = 1;
@@ -1323,8 +1323,8 @@ void clz_impl( const ptx_instruction *pI, ptx_thread_info *thread )
    unsigned i_type = pI->get_type();
    a = thread->get_operand_value(src1, dst, i_type, thread, 1);
 
-   int max;
-   unsigned long long mask;
+   int max = 0;
+   unsigned long long mask = 0;
    d.u64 = 0;
 
    switch ( i_type ) {
@@ -1403,7 +1403,7 @@ ptx_reg_t chop( ptx_reg_t x, unsigned from_width, unsigned to_width, int to_sign
    case 16: x.mask_and(0,0xFFFF);      break;
    case 32: x.mask_and(0,0xFFFFFFFF);  break;
    case 64: break;
-   default: assert(0);
+   default: assert(0); break;
    }
    return x;
 }
@@ -1416,7 +1416,7 @@ ptx_reg_t sext( ptx_reg_t x, unsigned from_width, unsigned to_width, int to_sign
    case 16:if ( x.get_bit(15) ) x.mask_or(0xFFFFFFFF,0xFFFF0000);break;
    case 32: if ( x.get_bit(31) ) x.mask_or(0xFFFFFFFF,0x00000000);break;
    case 64: break;
-   default: assert(0);
+   default: assert(0); break;
    }
    return x;
 }
@@ -1934,7 +1934,7 @@ void cvt_impl( const ptx_instruction *pI, ptx_thread_info *thread )
          data.f64 = -data.f64;
          break;
       default:
-         assert(0);
+         assert(0); break;
       }
 
    }
@@ -1969,7 +1969,7 @@ void cvta_impl( const ptx_instruction *pI, ptx_thread_info *thread )
       case shared_space: to_addr_hw = generic_to_shared( smid, from_addr_hw ); break;
       case local_space:  to_addr_hw = generic_to_local( smid, hwtid, from_addr_hw ); break;
       case global_space: to_addr_hw = generic_to_global(from_addr_hw ); break;
-      default: abort();
+      default: abort(); break;
       }
    } else {
       switch( space.get_type() ) {
@@ -1977,7 +1977,7 @@ void cvta_impl( const ptx_instruction *pI, ptx_thread_info *thread )
       case local_space:  to_addr_hw =  local_to_generic( smid, hwtid, from_addr_hw )
                                       + thread->get_local_mem_stack_pointer(); break; // add stack ptr here so that it can be passed as a pointer at function call 
       case global_space: to_addr_hw = global_to_generic( from_addr_hw ); break;
-      default: abort();
+      default: abort(); break;
       }
    }
    
@@ -2149,6 +2149,7 @@ void decode_space( memory_space_t &space, ptx_thread_info *thread, const operand
    case undefined_space:
    default:
       abort();
+      break;
    }
 }
 
@@ -2201,7 +2202,7 @@ void ld_exec( const ptx_instruction *pI, ptx_thread_info *thread )
        }
    }
    thread->m_last_effective_address = addr;
-   thread->m_last_memory_space = space; 
+   thread->m_last_memory_space = space;
 }
 
 void ld_impl( const ptx_instruction *pI, ptx_thread_info *thread ) 
@@ -2494,7 +2495,7 @@ void mov_impl( const ptx_instruction *pI, ptx_thread_info *thread )
 
    if( (src1.is_vector() || dst.is_vector()) && (i_type != BB64_TYPE) && (i_type != BB128_TYPE) && (i_type != FF64_TYPE) ) {
       // pack or unpack operation
-      unsigned nbits_to_move;
+      unsigned nbits_to_move = 0;
       ptx_reg_t tmp_bits;
 
       switch( pI->get_type() ) {
@@ -3076,22 +3077,22 @@ bool CmpOp( int type, ptx_reg_t a, ptx_reg_t b, unsigned cmpop )
       case EQ_OPTION: t = (a.u16 == b.u16); break;
       case NE_OPTION: t = (a.u16 != b.u16); break;
       default:
-         assert(0);
-      }
+         assert(0); break;
+      } break;
 
    case B32_TYPE: 
       switch (cmpop) {
       case EQ_OPTION: t = (a.u32 == b.u32); break;
       case NE_OPTION: t = (a.u32 != b.u32); break;
       default:
-         assert(0);
-      }
+         assert(0); break;
+      } break;
    case B64_TYPE:
       switch (cmpop) {
       case EQ_OPTION: t = (a.u64 == b.u64); break;
       case NE_OPTION: t = (a.u64 != b.u64); break;
       default:
-         assert(0);
+         assert(0); break;
       }
       break;
    case S8_TYPE: 
@@ -3104,7 +3105,7 @@ bool CmpOp( int type, ptx_reg_t a, ptx_reg_t b, unsigned cmpop )
       case GT_OPTION: t = (a.s16 > b.s16); break;
       case GE_OPTION: t = (a.s16 >= b.s16); break;
       default:
-         assert(0);
+         assert(0); break;
       }
       break;
    case S32_TYPE: 
@@ -3116,7 +3117,7 @@ bool CmpOp( int type, ptx_reg_t a, ptx_reg_t b, unsigned cmpop )
       case GT_OPTION: t = (a.s32 > b.s32); break;
       case GE_OPTION: t = (a.s32 >= b.s32); break;
       default:
-         assert(0);
+         assert(0); break;
       }
       break;
    case S64_TYPE:
@@ -3128,7 +3129,7 @@ bool CmpOp( int type, ptx_reg_t a, ptx_reg_t b, unsigned cmpop )
       case GT_OPTION: t = (a.s64 > b.s64); break;
       case GE_OPTION: t = (a.s64 >= b.s64); break;
       default:
-         assert(0);
+         assert(0); break;
       }
       break;
    case U8_TYPE: 
@@ -3145,7 +3146,7 @@ bool CmpOp( int type, ptx_reg_t a, ptx_reg_t b, unsigned cmpop )
       case HI_OPTION: t = (a.u16 > b.u16); break;
       case HS_OPTION: t = (a.u16 >= b.u16); break;
       default:
-         assert(0);
+         assert(0); break;
       }
       break;
    case U32_TYPE: 
@@ -3161,7 +3162,7 @@ bool CmpOp( int type, ptx_reg_t a, ptx_reg_t b, unsigned cmpop )
       case HI_OPTION: t = (a.u32 > b.u32); break;
       case HS_OPTION: t = (a.u32 >= b.u32); break;
       default:
-         assert(0);
+         assert(0); break;
       }
       break;
    case U64_TYPE:
@@ -3177,7 +3178,7 @@ bool CmpOp( int type, ptx_reg_t a, ptx_reg_t b, unsigned cmpop )
       case HI_OPTION: t = (a.u64 > b.u64); break;
       case HS_OPTION: t = (a.u64 >= b.u64); break;
       default:
-         assert(0);
+         assert(0); break;
       }
       break;
    case F16_TYPE: assert(0); break;
@@ -3198,7 +3199,7 @@ bool CmpOp( int type, ptx_reg_t a, ptx_reg_t b, unsigned cmpop )
       case NUM_OPTION: t = !isNaN(a.f32) && !isNaN(b.f32); break;
       case NAN_OPTION: t = isNaN(a.f32) || isNaN(b.f32); break;
       default:
-         assert(0);
+         assert(0); break;
       }
       break;
    case F64_TYPE: 
@@ -3219,7 +3220,7 @@ bool CmpOp( int type, ptx_reg_t a, ptx_reg_t b, unsigned cmpop )
       case NUM_OPTION: t = !isNaN(a.f64) && !isNaN(b.f64); break;
       case NAN_OPTION: t = isNaN(a.f64) || isNaN(b.f64); break;
       default:
-         assert(0);
+         assert(0); break;
       }
       break;
    default: assert(0); break;
@@ -3467,7 +3468,7 @@ void slct_impl( const ptx_instruction *pI, ptx_thread_info *thread )
    switch ( c_type ) {
    case S32_TYPE: t = c.s32 >= 0; break;
    case F32_TYPE: t = c.f32 >= 0; break;
-   default: assert(0);
+   default: assert(0); break;
    }
 
    switch ( i_type ) {
@@ -3481,7 +3482,7 @@ void slct_impl( const ptx_instruction *pI, ptx_thread_info *thread )
    case FF64_TYPE:
    case B64_TYPE:
    case U64_TYPE: d.u64 = t?a.u64:b.u64; break;
-   default: assert(0);
+   default: assert(0); break;
    }
 
    thread->set_operand_value(dst,d, i_type, thread, pI);
@@ -3787,7 +3788,7 @@ void tex_impl( const ptx_instruction *pI, ptx_thread_info *thread )
    unsigned int width = 0, height = 0;
    int x = 0;
    int y = 0;
-   unsigned tex_array_index;
+   unsigned tex_array_index = 0;
    float alpha=0, beta=0;
 
    type_info_key::type_decode(to_type,size,t);
@@ -4014,7 +4015,7 @@ void tex_impl( const ptx_instruction *pI, ptx_thread_info *thread )
       thread->m_last_effective_address = tex_array_base + memreqindex;//tex_array_index;
       break;
    default:
-      assert(0);
+      assert(0); break;
    }
    thread->m_last_memory_space = tex_space; 
 

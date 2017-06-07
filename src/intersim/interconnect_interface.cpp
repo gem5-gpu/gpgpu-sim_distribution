@@ -60,7 +60,7 @@ public:
             data = buf.front();
             packet_n--;
          }
-         assert(temp_d == buf.front()); //all flits must belong to the same packet
+         if(temp_d != buf.front()) assert(temp_d == buf.front()); //all flits must belong to the same packet
          buf.pop();
          tail_flag.pop();
       }
@@ -74,7 +74,7 @@ public:
          if (tail_flag.front()) {
             data = buf.front();
          }
-         assert(temp_d == buf.front()); //all flits must belong to the same packet
+         if(temp_d != buf.front()) assert(temp_d == buf.front()); //all flits must belong to the same packet
       }
       return data; 
    }

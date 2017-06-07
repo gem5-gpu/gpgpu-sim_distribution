@@ -138,7 +138,7 @@ void gpgpu_t::gpgpu_ptx_sim_bindTextureToArray(const struct textureReference* te
    m_TextureRefToCudaArray[texref] = array;
    unsigned int texel_size_bits = array->desc.w + array->desc.x + array->desc.y + array->desc.z;
    unsigned int texel_size = texel_size_bits/8;
-   unsigned int Tx, Ty;
+   unsigned int Tx = 0, Ty;
    int r;
 
    printf("GPGPU-Sim PTX:   texel size = %d\n", texel_size);
@@ -1048,8 +1048,8 @@ void function_info::finalize( memory_space *param_mem )
       param_t param_value = p.get_value();
       param_value.type = type;
       symbol *param = m_symtab->lookup(name.c_str());
-      unsigned xtype = param->type()->get_key().scalar_type();
-      assert(xtype==(unsigned)type);
+//      unsigned xtype = param->type()->get_key().scalar_type();
+      assert(param->type()->get_key().scalar_type()==(unsigned)type);
       size_t size;
       size = param_value.size; // size of param in bytes
       // assert(param_value.offset == param_address);

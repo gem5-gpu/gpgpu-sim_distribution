@@ -162,16 +162,16 @@ public:
    }
    void check_ld_update(unsigned int uid,unsigned int slot, long int latency) { 
       if ( ld_time_map.find( uid )!=ld_time_map.end() ) {
-         int our_latency = ld_time_map[uid][slot] - ld_time_map[uid][IN_ICNT_TO_MEM];
-         assert( our_latency == latency);
+//         int our_latency = ld_time_map[uid][slot] - ld_time_map[uid][IN_ICNT_TO_MEM];
+         assert( ld_time_map[uid][slot] - ld_time_map[uid][IN_ICNT_TO_MEM] == latency);
       } else if (slot < NUM_MEM_REQ_STAT ) {
          abort();
       }
    }
    void check_st_update(unsigned int uid,unsigned int slot, long int latency) { 
       if ( st_time_map.find( uid )!=st_time_map.end() ) {
-         int our_latency = st_time_map[uid][slot] - st_time_map[uid][IN_ICNT_TO_MEM];
-         assert( our_latency == latency);
+//         int our_latency = st_time_map[uid][slot] - st_time_map[uid][IN_ICNT_TO_MEM];
+         assert( st_time_map[uid][slot] - st_time_map[uid][IN_ICNT_TO_MEM] == latency);
       } else {
          abort();
       } 

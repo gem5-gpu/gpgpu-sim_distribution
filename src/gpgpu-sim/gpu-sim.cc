@@ -1573,12 +1573,12 @@ simt_core_cluster * gpgpu_sim::getSIMTCluster()
 
 shader_core_ctx* gpgpu_sim::get_shader(int id)
 {
-    int clusters = m_config.m_shader_config.n_simt_clusters;
+//    int clusters = m_config.m_shader_config.n_simt_clusters;
     int shaders_per_cluster = m_config.m_shader_config.n_simt_cores_per_cluster;
     int cluster = id/shaders_per_cluster;
     int shader_in_cluster = id%shaders_per_cluster;
     assert(shader_in_cluster < shaders_per_cluster);
-    assert(cluster < clusters);
+    assert(cluster < m_config.m_shader_config.n_simt_clusters);
 
     return m_cluster[cluster]->get_core(shader_in_cluster);
 }

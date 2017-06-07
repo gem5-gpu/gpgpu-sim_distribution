@@ -1254,7 +1254,8 @@ unsigned function_info::print_insn( unsigned pc, FILE * fp ) const
    snprintf(command,1024,"c++filt -p %s",m_name.c_str());
    FILE *p = popen(command,"r");
    buffer[0]=0;
-   fscanf(p,"%1023s",buffer);
+   int scanned = fscanf(p,"%1023s",buffer);
+   if(!scanned) assert(!scanned);
    fprintf(fp,"%s",buffer);
    if ( index >= m_instr_mem_size ) {
       fprintf(fp, "<past last instruction (max pc=%u)>", m_start_PC + m_instr_mem_size - 1 );

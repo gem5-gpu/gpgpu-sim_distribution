@@ -388,7 +388,7 @@ void memory_sub_partition::cache_cycle( unsigned cycle )
                 if ( status == HIT ) {
                     if( !write_sent ) {
                         // L2 cache replies
-                        assert(!read_sent);
+                        if(read_sent) assert(!read_sent);
                         if( mf->get_access_type() == L1_WRBK_ACC ) {
                             m_request_tracker.erase(mf);
                             delete mf;
@@ -407,7 +407,7 @@ void memory_sub_partition::cache_cycle( unsigned cycle )
                     m_icnt_L2_queue->pop();
                 } else {
                     assert(!write_sent);
-                    assert(!read_sent);
+                    if(read_sent) assert(!read_sent);
                     // L2 cache lock-up: will try again next cycle
                 }
             }
