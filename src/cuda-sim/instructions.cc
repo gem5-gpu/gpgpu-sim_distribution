@@ -3502,6 +3502,7 @@ void slct_impl( const ptx_instruction *pI, ptx_thread_info *thread )
    case F32_TYPE:
    case B32_TYPE:
    case U32_TYPE: d.u32 = t?a.u32:b.u32; break;
+   case S32_TYPE: d.u32 = t?a.u32:b.u32; break;
    case F64_TYPE:
    case FF64_TYPE:
    case B64_TYPE:
