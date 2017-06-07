@@ -368,6 +368,9 @@ void shader_core_config::reg_options(class OptionParser * opp)
                                 "For complete list of prioritization values see shader.h enum scheduler_prioritization_type"
                                 "Default: gto",
                                  "gto");
+    option_parser_register(opp, "-gpgpu_fetch_decode_width", OPT_INT32, &gpgpu_fetch_decode_width,
+                            "Number of instructions to fetch per cycle (default=2)",
+                            "2");
 }
 
 void gpgpu_sim_config::reg_options(option_parser_t opp)

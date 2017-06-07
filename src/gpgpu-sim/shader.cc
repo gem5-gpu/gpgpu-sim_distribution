@@ -572,30 +572,30 @@ void shader_core_stats::visualizer_print( gzFile visualizer_file )
 void shader_core_ctx::decode()
 {
     if( m_inst_fetch_buffer.m_valid ) {
-        // decode 1 or 2 instructions and place them into ibuffer
-        address_type pc = m_inst_fetch_buffer.m_pc;
-        const warp_inst_t* pI1 = ptx_fetch_inst(pc);
-        m_warp[m_inst_fetch_buffer.m_warp_id].ibuffer_fill(0,pI1);
-        m_warp[m_inst_fetch_buffer.m_warp_id].inc_inst_in_pipeline();
-        if( pI1 ) {
-            m_stats->m_num_decoded_insn[m_sid]++;
-            if(pI1->oprnd_type==INT_OP){
-                m_stats->m_num_INTdecoded_insn[m_sid]++;
-            }else if(pI1->oprnd_type==FP_OP) {
-            	m_stats->m_num_FPdecoded_insn[m_sid]++;
+        // Decode instructions and place them into ibuffer
+        address_type base_ibuf_pc = m_inst_fetch_buffer.m_pc;
+        address_type end_ibuf_pc = base_ibuf_pc + m_inst_fetch_buffer.m_nbytes;
+        unsigned ibuf_pos = 0;
+        for (address_type tpc = base_ibuf_pc; tpc < end_ibuf_pc;) {
+            const warp_inst_t* new_pI = ptx_fetch_inst(tpc);
+            if (new_pI) {
+                assert(ibuf_pos < m_config->gpgpu_fetch_decode_width);
+                m_warp[m_inst_fetch_buffer.m_warp_id].ibuffer_fill(ibuf_pos, new_pI);
+                m_warp[m_inst_fetch_buffer.m_warp_id].inc_inst_in_pipeline();
+                m_stats->m_num_decoded_insn[m_sid]++;
+                if (new_pI->oprnd_type == INT_OP){
+                    m_stats->m_num_INTdecoded_insn[m_sid]++;
+                } else if(new_pI->oprnd_type == FP_OP) {
+                    m_stats->m_num_FPdecoded_insn[m_sid]++;
+                }
+                tpc += new_pI->isize;
+                ibuf_pos++;
+            } else {
+                // Advance tpc pointer to at least the end of the fetch size
+                tpc += m_inst_fetch_buffer.m_nbytes;
             }
-           const warp_inst_t* pI2 = ptx_fetch_inst(pc+pI1->isize);
-           if( pI2 ) {
-               m_warp[m_inst_fetch_buffer.m_warp_id].ibuffer_fill(1,pI2);
-               m_warp[m_inst_fetch_buffer.m_warp_id].inc_inst_in_pipeline();
-               m_stats->m_num_decoded_insn[m_sid]++;
-               if(pI2->oprnd_type==INT_OP){
-                   m_stats->m_num_INTdecoded_insn[m_sid]++;
-               }else if(pI2->oprnd_type==FP_OP) {
-            	   m_stats->m_num_FPdecoded_insn[m_sid]++;
-               }
-           }
         }
+        assert(ibuf_pos > 0);
         m_inst_fetch_buffer.m_valid = false;
     }
 }
@@ -634,17 +634,21 @@ void shader_core_ctx::fetch()
                 // the kernel that is currently scheduled to this shader
                 address_type ppc = pc + m_kernel->get_inst_base_vaddr();
 
-                unsigned nbytes=16; 
-                unsigned offset_in_block = pc & (m_config->m_L1I_config.get_line_sz()-1);
+                // HACK: This assumes that instructions are 8B each
+                unsigned nbytes = m_config->gpgpu_fetch_decode_width * 8;
+                unsigned offset_in_block = ppc & (m_config->m_L1I_config.get_line_sz()-1);
                 if( (offset_in_block+nbytes) > m_config->m_L1I_config.get_line_sz() )
                     nbytes = (m_config->m_L1I_config.get_line_sz()-offset_in_block);
 
                 // TODO: replace with use of allocator
                 // mem_fetch *mf = m_mem_fetch_allocator->alloc()
+                // HACK: This access will get sent into gem5, so the control
+                // header size must be zero, since gem5 packets will assess
+                // control header sizing
                 mem_access_t acc(INST_ACC_R,ppc,nbytes,false);
                 mem_fetch *mf = new mem_fetch(acc,
                                               NULL/*we don't have an instruction yet*/,
-                                              READ_PACKET_SIZE,
+                                              0, // Control header size
                                               warp_id,
                                               m_sid,
                                               m_tpc,
