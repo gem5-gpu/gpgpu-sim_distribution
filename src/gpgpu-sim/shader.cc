@@ -1825,6 +1825,9 @@ bool ldst_unit::writebackInst(warp_inst_t &inst)
 {
     if (m_next_wb.empty()) {
         m_next_wb = inst;
+        if( m_next_wb.isatomic() ) {
+            m_core->decrement_atomic_count(m_next_wb.warp_id(),m_next_wb.active_count());
+        }
     } else if (m_next_wb.get_uid() != inst.get_uid()) {
         return false; // WB reg full
     }

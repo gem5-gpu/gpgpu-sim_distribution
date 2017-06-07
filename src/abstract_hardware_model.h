@@ -764,6 +764,7 @@ public:
     unsigned initiation_interval;
 
     unsigned data_size; // what is the size of the word being operated on?
+    int data_type;
     memory_space_t space;
     cache_operator_type cache_op;
 
@@ -848,7 +849,7 @@ public:
     }
     void set_data( unsigned n, const uint8_t *_data )
     {
-        assert( op == STORE_OP );
+        assert( op == STORE_OP || memory_op == memory_store );
         assert( space == global_space || space == const_space || space == local_space );
         assert( m_per_scalar_thread_valid );
         assert( !m_per_scalar_thread[n].data_valid );
@@ -956,6 +957,8 @@ public:
     unsigned get_uid() const { return m_uid; }
     int vectorLength;
 
+    int get_atomic() const { return m_atomic_spec; }
+
 protected:
 
     unsigned m_uid;
@@ -964,6 +967,7 @@ protected:
     unsigned long long issue_cycle;
     unsigned cycles; // used for implementing initiation interval delay
     bool m_isatomic;
+    int m_atomic_spec;
     bool m_is_printf;
     unsigned m_warp_id;
     unsigned m_dynamic_warp_id; 

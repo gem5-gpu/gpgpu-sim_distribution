@@ -827,8 +827,6 @@ void andn_impl( const ptx_instruction *pI, ptx_thread_info *thread )
 
 void atom_callback( const inst_t* inst, ptx_thread_info* thread )
 {
-    printf("GPGPU-Sim PTX: UNTESTED INSTRUCTION: ATOM\n");
-    assert(0);
    const ptx_instruction *pI = dynamic_cast<const ptx_instruction*>(inst);
 
    // "Decode" the output type
@@ -879,7 +877,7 @@ void atom_callback( const inst_t* inst, ptx_thread_info* thread )
 
    memory_space *mem = NULL;
    if(space == global_space)
-       mem = thread->get_global_memory();
+       panic("gem5-gpu: Global atomics shouldn't call atom_callback!\n");
    else if(space == shared_space)
        mem = thread->m_shared_mem;
    else
@@ -1141,8 +1139,6 @@ void atom_callback( const inst_t* inst, ptx_thread_info* thread )
 // atom_impl will now result in a callback being called in mem_ctrl_pop (gpu-sim.c)
 void atom_impl( const ptx_instruction *pI, ptx_thread_info *thread )
 {   
-    printf("GPGPU-Sim PTX: UNTESTED INSTRUCTION: ATOM\n");
-    assert(0);
    // SYNTAX
    // atom.space.operation.type d, a, b[, c]; (now read in callback)
 

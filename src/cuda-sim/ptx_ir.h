@@ -945,7 +945,6 @@ public:
 
    memory_space_t get_space() const { return m_space_spec;}
    unsigned get_vector() const { return m_vector_spec;}
-   unsigned get_atomic() const { return m_atomic_spec;}
 
    int get_type() const 
    {
@@ -1010,7 +1009,7 @@ public:
       return false;
    }
    bool has_memory_write() const {
-      if( m_opcode == ST_OP ) return true;
+      if( m_opcode == ST_OP || m_opcode == ATOM_OP ) return true;
       // Check PTXPlus operand type below
       // Destination operand is a memory operand
       ptx_instruction::const_iterator op=op_iter_begin();
@@ -1059,7 +1058,6 @@ private:
    memory_space_t m_space_spec;
    int m_geom_spec;
    int m_vector_spec;
-   int m_atomic_spec;
    enum vote_mode_t m_vote_mode;
    int m_membar_level;
    int m_instr_mem_index; //index into m_instr_mem array
