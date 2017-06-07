@@ -1298,6 +1298,7 @@ struct shader_core_config : public core_config
     
     bool gpgpu_dwf_reg_bankconflict;
 
+    bool gpgpu_cycle_sched_prio;
     int gpgpu_num_sched_per_core;
     int gpgpu_max_insn_issue_per_warp;
 
@@ -1840,6 +1841,7 @@ private:
     opndcoll_rfu_t            m_operand_collector;
 
     //schedule
+    unsigned m_scheduler_prio;
     std::vector<scheduler_unit*>  schedulers;
 
     // execute

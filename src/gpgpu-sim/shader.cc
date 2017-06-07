@@ -141,7 +141,8 @@ shader_core_ctx::shader_core_ctx( class gpgpu_sim *gpu,
                                          CONCRETE_SCHEDULER_WARP_LIMITING:
                                          NUM_CONCRETE_SCHEDULERS;
     assert ( scheduler != NUM_CONCRETE_SCHEDULERS );
-    
+
+    m_scheduler_prio = 0;
     for (int i = 0; i < m_config->gpgpu_num_sched_per_core; i++) {
         switch( scheduler )
         {
@@ -707,9 +708,13 @@ void shader_core_ctx::issue_warp( register_set& pipe_reg_set, const warp_inst_t*
 }
 
 void shader_core_ctx::issue(){
+    if (m_config->gpgpu_cycle_sched_prio) {
+        m_scheduler_prio = (m_scheduler_prio + 1) % schedulers.size();
+    }
     //really is issue;
     for (unsigned i = 0; i < schedulers.size(); i++) {
-        schedulers[i]->cycle();
+        unsigned sched_index = (m_scheduler_prio + i) % schedulers.size();
+        schedulers[sched_index]->cycle();
     }
 }
 

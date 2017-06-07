@@ -337,6 +337,9 @@ void shader_core_config::reg_options(class OptionParser * opp)
     option_parser_register(opp, "-gpgpu_coalesce_arch", OPT_INT32, &gpgpu_coalesce_arch, 
                             "Coalescing arch (default = 13, anything else is off for now)", 
                             "13");
+    option_parser_register(opp, "-gpgpu_cycle_sched_prio", OPT_BOOL, &gpgpu_cycle_sched_prio,
+                            "Whether to cycle the priority of warp schedulers (default=false)",
+                            "0");
     option_parser_register(opp, "-gpgpu_num_sched_per_core", OPT_INT32, &gpgpu_num_sched_per_core, 
                             "Number of warp schedulers per core", 
                             "1");
