@@ -9,7 +9,7 @@
 IQRouter::IQRouter( const Configuration& config,
                     Module *parent, string name, int id,
                     int inputs, int outputs )
-: Router( config,
+: Router_gpgpu( config,
           parent, name,
           id,
           inputs, outputs )

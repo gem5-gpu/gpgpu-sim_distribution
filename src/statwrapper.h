@@ -1,7 +1,7 @@
 #ifndef STAT_WRAPER_H
 #define STAT_WRAPER_H
 
-class Stats* StatCreate (const char * name, double bin_size, int num_bins) ;
+class Stats_gpgpu* StatCreate (const char * name, double bin_size, int num_bins) ;
 void StatClear(void * st);
 void StatAddSample (void * st, int val);
 double StatAverage(void * st) ;

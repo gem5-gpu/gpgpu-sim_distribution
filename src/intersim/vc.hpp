@@ -64,7 +64,7 @@ public:
 
    int  GetPriority( ) const;
 
-   void Route( tRoutingFunction rf, const Router* router, const Flit* f, int in_channel );
+   void Route( tRoutingFunction rf, const Router_gpgpu* router, const Flit* f, int in_channel );
 
    void AdvanceTime( );
 

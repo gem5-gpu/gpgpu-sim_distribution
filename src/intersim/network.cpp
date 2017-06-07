@@ -8,7 +8,7 @@ int gK = 0;
 int gN = 0;
 int gNodes = 0;
 
-Network::Network( const Configuration &config ) :
+Network_gpgpu::Network_gpgpu( const Configuration &config ) :
 Module( 0, "network" )
 {
    _size     = -1; 
@@ -17,7 +17,7 @@ Module( 0, "network" )
    _channels = -1;
 }
 
-Network::~Network( )
+Network_gpgpu::~Network_gpgpu( )
 {
    for ( int r = 0; r < _size; ++r ) {
       delete _routers[r];
@@ -36,14 +36,14 @@ Network::~Network( )
    delete [] _chan_cred;
 }
 
-void Network::_Alloc( )
+void Network_gpgpu::_Alloc( )
 {
    assert( ( _size != -1 ) && 
            ( _sources != -1 ) && 
            ( _dests != -1 ) && 
            ( _channels != -1 ) );
 
-   _routers = new Router * [_size];
+   _routers = new Router_gpgpu * [_size];
    gNodes = _sources;
 
    _inject = new Flit * [_sources];
@@ -63,31 +63,31 @@ void Network::_Alloc( )
    _chan_cred   = new Credit * [_channels];
 }
 
-int Network::NumSources( ) const
+int Network_gpgpu::NumSources( ) const
 {
    return _sources;
 }
 
-int Network::NumDests( ) const
+int Network_gpgpu::NumDests( ) const
 {
    return _dests;
 }
 
-void Network::ReadInputs( )
+void Network_gpgpu::ReadInputs( )
 {
    for ( int r = 0; r < _size; ++r ) {
       _routers[r]->ReadInputs( );
    }
 }
 
-void Network::InternalStep( )
+void Network_gpgpu::InternalStep( )
 {
    for ( int r = 0; r < _size; ++r ) {
       _routers[r]->InternalStep( );
    }
 }
 
-void Network::WriteOutputs( )
+void Network_gpgpu::WriteOutputs( )
 {
    for ( int r = 0; r < _size; ++r ) {
       _routers[r]->WriteOutputs( );
@@ -101,47 +101,47 @@ void Network::WriteOutputs( )
    _chan_use_cycles++;
 }
 
-void Network::WriteFlit( Flit *f, int source )
+void Network_gpgpu::WriteFlit( Flit *f, int source )
 {
    assert( ( source >= 0 ) && ( source < _sources ) );
    _inject[source] = f;
 }
 
-Flit *Network::ReadFlit( int dest )
+Flit *Network_gpgpu::ReadFlit( int dest )
 {
    assert( ( dest >= 0 ) && ( dest < _dests ) );
    return _eject[dest];
 }
 
-void Network::WriteCredit( Credit *c, int dest )
+void Network_gpgpu::WriteCredit( Credit *c, int dest )
 {
    assert( ( dest >= 0 ) && ( dest < _dests ) );
    _eject_cred[dest] = c;
 }
 
-Credit *Network::ReadCredit( int source )
+Credit *Network_gpgpu::ReadCredit( int source )
 {
    assert( ( source >= 0 ) && ( source < _sources ) );
    return _inject_cred[source];
 }
 
-void Network::InsertRandomFaults( const Configuration &config )
+void Network_gpgpu::InsertRandomFaults( const Configuration &config )
 {
    Error( "InsertRandomFaults not implemented for this topology!" );
 }
 
-void Network::OutChannelFault( int r, int c, bool fault )
+void Network_gpgpu::OutChannelFault( int r, int c, bool fault )
 {
    assert( ( r >= 0 ) && ( r < _size ) );
    _routers[r]->OutChannelFault( c, fault );
 }
 
-double Network::Capacity( ) const
+double Network_gpgpu::Capacity( ) const
 {
    return 1.0;
 }
 
-void Network::Display( ) const
+void Network_gpgpu::Display( ) const
 {
    for ( int r = 0; r < _size; ++r ) {
       _routers[r]->Display( );

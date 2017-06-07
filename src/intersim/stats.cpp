@@ -5,7 +5,7 @@
 
 #include "stats.hpp"
 
-Stats::Stats( Module *parent, const string &name,
+Stats_gpgpu::Stats_gpgpu( Module *parent, const string &name,
               double bin_size, int num_bins ) :
 Module( parent, name ),
 _num_bins( num_bins ), _bin_size( bin_size )
@@ -15,12 +15,12 @@ _num_bins( num_bins ), _bin_size( bin_size )
    Clear( );
 }
 
-Stats::~Stats( )
+Stats_gpgpu::~Stats_gpgpu( )
 {
    delete [] _hist;
 }
 
-void Stats::Clear( )
+void Stats_gpgpu::Clear( )
 {
    _num_samples = 0;
    _sample_sum  = 0.0;
@@ -32,27 +32,27 @@ void Stats::Clear( )
    _reset = true;
 }
 
-double Stats::Average( ) const
+double Stats_gpgpu::Average( ) const
 {
    return _sample_sum / (double)_num_samples;
 }
 
-double Stats::Min( ) const
+double Stats_gpgpu::Min( ) const
 {
    return _min;
 }
 
-double Stats::Max( ) const
+double Stats_gpgpu::Max( ) const
 {
    return _max;
 }
 
-int Stats::NumSamples( ) const
+int Stats_gpgpu::NumSamples( ) const
 {
    return _num_samples;
 }
 
-void Stats::AddSample( double val )
+void Stats_gpgpu::AddSample( double val )
 {
    int b;
 
@@ -83,12 +83,12 @@ void Stats::AddSample( double val )
    _hist[b]++;
 }
 
-void Stats::AddSample( int val )
+void Stats_gpgpu::AddSample( int val )
 {
    AddSample( (double)val );
 }
 
-void Stats::Display( ) const
+void Stats_gpgpu::Display( ) const
 {
    int b;
 
@@ -109,7 +109,7 @@ void Stats::Display( ) const
    printf("];\n");
 }
 
-bool Stats::NeverUsed() const
+bool Stats_gpgpu::NeverUsed() const
 {
    if ( _reset ) {
       return true;

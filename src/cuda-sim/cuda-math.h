@@ -345,7 +345,7 @@ int __signbitd(double d)
 
 #undef __CUDACC__
 #define __CUDA_INTERNAL_COMPILATION__
-#include <math_functions.h>
+//#include <math_functions.h>
 #undef __CUDA_INTERNAL_COMPILATION__
 #undef __attribute__
 

@@ -8,7 +8,7 @@
 //#define DEBUG_FLY
 
 KNFly::KNFly( const Configuration &config ) :
-Network( config )
+Network_gpgpu( config )
 {
    _ComputeSize( config );
    _Alloc( );
@@ -45,7 +45,7 @@ void KNFly::_BuildNet( const Configuration &config )
       for ( int addr = 0; addr < per_stage; ++addr ) {
 
          router_name << "router_" << stage << "_" << addr;
-         _routers[node] = Router::NewRouter( config, this, router_name.str( ), 
+         _routers[node] = Router_gpgpu::NewRouter( config, this, router_name.str( ), 
                                              node, _k, _k );
          router_name.seekp( 0, ios::beg );
 

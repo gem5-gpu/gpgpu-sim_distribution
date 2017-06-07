@@ -6,7 +6,7 @@
 #include "module.hpp"
 #include "config_utils.hpp"
 
-class Arbiter : public Module {
+class Arbiter_gpgpu : public Module {
 protected:
    const int _inputs;
 
@@ -21,10 +21,10 @@ protected:
    int _match;
 
 public:
-   Arbiter( const Configuration &,
+   Arbiter_gpgpu( const Configuration &,
             Module *parent, const string& name,
             int inputs );
-   virtual ~Arbiter( );
+   virtual ~Arbiter_gpgpu( );
 
    void Clear( );
 
@@ -36,14 +36,14 @@ public:
    int Match( ) const;
 };
 
-class PriorityArbiter : public Arbiter {
+class PriorityArbiter_gpgpu : public Arbiter_gpgpu {
    int _rr_ptr;
 
 public:
-   PriorityArbiter( const Configuration &config,
+   PriorityArbiter_gpgpu( const Configuration &config,
                     Module *parent, const string& name,
                     int inputs );
-   ~PriorityArbiter( );
+   ~PriorityArbiter_gpgpu( );
 
    void Arbitrate( );
 };

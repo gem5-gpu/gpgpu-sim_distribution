@@ -135,7 +135,7 @@ int VC::GetPriority( ) const
    return _pri;
 }
 
-void VC::Route( tRoutingFunction rf, const Router* router, const Flit* f, int in_channel )
+void VC::Route( tRoutingFunction rf, const Router_gpgpu* router, const Flit* f, int in_channel )
 {  
    rf( router, f, in_channel, _route_set, false );
 }

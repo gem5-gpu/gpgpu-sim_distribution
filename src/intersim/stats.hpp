@@ -1,9 +1,9 @@
-#ifndef _STATS_HPP_
-#define _STATS_HPP_
+#ifndef _STATS_GPGPU_HPP_
+#define _STATS_GPGPU_HPP_
 
 #include "module.hpp"
 
-class Stats : public Module {
+class Stats_gpgpu : public Module {
    int    _num_samples;
    double _sample_sum;
 
@@ -17,9 +17,9 @@ class Stats : public Module {
    int *_hist;
 
 public:
-   Stats( Module *parent, const string &name,
+   Stats_gpgpu( Module *parent, const string &name,
           double bin_size = 1.0, int num_bins = 10 );
-   ~Stats( );
+   ~Stats_gpgpu( );
 
    void Clear( );
 

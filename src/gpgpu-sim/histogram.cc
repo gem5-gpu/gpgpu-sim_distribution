@@ -27,6 +27,7 @@
 
 #include "histogram.h"
 
+#include <stdio.h>
 #include <assert.h>
 
 binned_histogram::binned_histogram (std::string name, int nbins, int* bins) 

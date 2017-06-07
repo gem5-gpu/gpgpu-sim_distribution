@@ -36,7 +36,7 @@
 #include "routefunc.hpp"
 #include "config_utils.hpp"
 
-class Buffer : public Module {
+class Buffer_gpgpu : public Module {
   
   int _occupancy;
   int _size;
@@ -49,9 +49,9 @@ class Buffer : public Module {
 
 public:
   
-  Buffer( const Configuration& config, int outputs,
+  Buffer_gpgpu( const Configuration& config, int outputs,
 	  Module *parent, const string& name );
-  ~Buffer();
+  ~Buffer_gpgpu();
 
   void AddFlit( int vc, Flit *f );
 

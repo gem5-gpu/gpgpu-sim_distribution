@@ -9,7 +9,7 @@
 #include "credit.hpp"
 #include "config_utils.hpp"
 
-class Router : public Module {
+class Router_gpgpu : public Module {
 protected:
    int _id;
 
@@ -37,13 +37,13 @@ protected:
    void    _RetireCredit( Credit *c );
 
 public:
-   Router( const Configuration& config,
+   Router_gpgpu( const Configuration& config,
            Module *parent, string name, int id,
            int inputs, int outputs );
 
-   virtual ~Router( );
+   virtual ~Router_gpgpu( );
 
-   static Router *NewRouter( const Configuration& config,
+   static Router_gpgpu *NewRouter( const Configuration& config,
                              Module *parent, string name, int id,
                              int inputs, int outputs );
 

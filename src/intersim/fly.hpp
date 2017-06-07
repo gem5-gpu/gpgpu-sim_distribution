@@ -3,7 +3,7 @@
 
 #include "network.hpp"
 
-class KNFly : public Network {
+class KNFly : public Network_gpgpu {
 
    int _k;
    int _n;

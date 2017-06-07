@@ -17,7 +17,7 @@ int DISPLAY_LAT_DIST     = 1; // distribution of packet latencies
 int DISPLAY_HOP_DIST     = 1;    // distribution of hop counts
 int DISPLAY_PAIR_LATENCY = 0;    // avg. latency for each s-d pair
 
-TrafficManager::TrafficManager( const Configuration &config, Network *net , int u_id)
+TrafficManager::TrafficManager( const Configuration &config, Network_gpgpu *net , int u_id)
 : Module( 0, "traffic_manager" )
 {
    int s;
@@ -139,39 +139,39 @@ TrafficManager::TrafficManager( const Configuration &config, Network *net , int 
 
    // ============ Statistics ============ 
 
-   _latency_stats   = new Stats * [_classes];
-   _overall_latency = new Stats * [_classes];
+   _latency_stats   = new Stats_gpgpu * [_classes];
+   _overall_latency = new Stats_gpgpu * [_classes];
 
    for ( int c = 0; c < _classes; ++c ) {
       tmp_name << "latency_stat_" << c;
-      _latency_stats[c] = new Stats( this, tmp_name.str( ), 1.0, 1000 );
+      _latency_stats[c] = new Stats_gpgpu( this, tmp_name.str( ), 1.0, 1000 );
       tmp_name.seekp( 0, ios::beg );
 
       tmp_name << "overall_latency_stat_" << c;
-      _overall_latency[c] = new Stats( this, tmp_name.str( ), 1.0, 1000 );
+      _overall_latency[c] = new Stats_gpgpu( this, tmp_name.str( ), 1.0, 1000 );
       tmp_name.seekp( 0, ios::beg );  
    }
 
-   _pair_latency     = new Stats * [_dests];
-   _accepted_packets = new Stats * [_dests];
+   _pair_latency     = new Stats_gpgpu * [_dests];
+   _accepted_packets = new Stats_gpgpu * [_dests];
 
    for ( int i = 0; i < _dests; ++i ) {
       tmp_name << "pair_stat_" << i;
-      _pair_latency[i] = new Stats( this, tmp_name.str( ), 1.0, 250 );
+      _pair_latency[i] = new Stats_gpgpu( this, tmp_name.str( ), 1.0, 250 );
       tmp_name.seekp( 0, ios::beg );
 
       tmp_name << "accepted_stat_" << i;
-      _accepted_packets[i] = new Stats( this, tmp_name.str( ) );
+      _accepted_packets[i] = new Stats_gpgpu( this, tmp_name.str( ) );
       tmp_name.seekp( 0, ios::beg );    
    }
 
-   _hop_stats            = new Stats( this, "hop_stats", 1.0, 20 );;
-   _overall_accepted     = new Stats( this, "overall_acceptance" );
-   _overall_accepted_min = new Stats( this, "overall_min_acceptance" );
+   _hop_stats            = new Stats_gpgpu( this, "hop_stats", 1.0, 20 );;
+   _overall_accepted     = new Stats_gpgpu( this, "overall_acceptance" );
+   _overall_accepted_min = new Stats_gpgpu( this, "overall_min_acceptance" );
 
    if ( _reorder ) {
-      _rob_latency = new Stats( this, "rob_latency", 1.0, 1000 );
-      _rob_size    = new Stats( this, "rob_size", 1.0, 250 );
+      _rob_latency = new Stats_gpgpu( this, "rob_latency", 1.0, 1000 );
+      _rob_size    = new Stats_gpgpu( this, "rob_size", 1.0, 250 );
    }
 
    _flit_timing = config.GetInt( "flit_timing" );

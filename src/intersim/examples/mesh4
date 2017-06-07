@@ -15,7 +15,7 @@ vc_buf_size = 1;
 
 wait_for_tail_credit = 1;
 
-// Router architecture
+// Router_gpgpu architecture
 
 vc_allocator = islip;
 sw_allocator = islip;

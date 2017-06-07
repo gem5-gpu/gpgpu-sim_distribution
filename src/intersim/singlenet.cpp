@@ -4,7 +4,7 @@
 #include "singlenet.hpp"
 
 SingleNet::SingleNet( const Configuration &config ) :
-Network( config )
+Network_gpgpu( config )
 {
    _ComputeSize( config );
    _Alloc( );
@@ -24,7 +24,7 @@ void SingleNet::_BuildNet( const Configuration &config )
 {
    int i;
 
-   _routers[0] = Router::NewRouter( config, this, "router", 0, 
+   _routers[0] = Router_gpgpu::NewRouter( config, this, "router", 0,
                                     _sources, _dests );
 
    for ( i = 0; i < _sources; ++i ) {

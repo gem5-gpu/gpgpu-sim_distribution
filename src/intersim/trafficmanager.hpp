@@ -28,7 +28,7 @@ public:
    int _sources;
    int _dests;
 
-   Network *_net;
+   Network_gpgpu *_net;
 
    // ============ Message priorities ============ 
 
@@ -77,17 +77,17 @@ public:
 
    // ============ Statistics ============
 
-   Stats **_latency_stats;     
-   Stats **_overall_latency;
-   Stats *_rob_latency;
-   Stats *_rob_size;
+   Stats_gpgpu **_latency_stats;
+   Stats_gpgpu **_overall_latency;
+   Stats_gpgpu *_rob_latency;
+   Stats_gpgpu *_rob_size;
 
-   Stats **_pair_latency;
-   Stats *_hop_stats;
+   Stats_gpgpu **_pair_latency;
+   Stats_gpgpu *_hop_stats;
 
-   Stats **_accepted_packets;
-   Stats *_overall_accepted;
-   Stats *_overall_accepted_min;
+   Stats_gpgpu **_accepted_packets;
+   Stats_gpgpu *_overall_accepted;
+   Stats_gpgpu *_overall_accepted_min;
 
    int   **_latest_packet;
 
@@ -161,7 +161,7 @@ public:
 
 public:
    int uid; // this traffic manger's ID useful when we have more than 1 traffic objects
-   TrafficManager( const Configuration &config, Network *net,int uid );
+   TrafficManager( const Configuration &config, Network_gpgpu *net,int uid );
    ~TrafficManager( );
    void IcntInitPerGrid  (int time);
    void SetDrainState( );

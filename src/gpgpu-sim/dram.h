@@ -179,7 +179,7 @@ private:
    unsigned int bwutil_partial;
 
    struct memory_stats_t *m_stats;
-   class Stats* mrqq_Dist; //memory request queue inside DRAM  
+   class Stats_gpgpu* mrqq_Dist; //memory request queue inside DRAM
 
    friend class frfcfs_scheduler;
 };

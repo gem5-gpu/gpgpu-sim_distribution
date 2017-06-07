@@ -36,8 +36,8 @@
 
 #define SHADER_PRINT_STR SIM_PRINT_STR "Core %d - "
 #define SCHED_PRINT_STR SHADER_PRINT_STR "Scheduler %d - "
-#define SHADER_DTRACE(x)  (DTRACE(x) && (Trace::sampling_core == get_sid()\
-                                         || Trace::sampling_core == -1))
+#define SHADER_DTRACE(x)  (GPGPUSIM_DTRACE(x) && (Trace_gpgpu::sampling_core == get_sid()\
+                                         || Trace_gpgpu::sampling_core == -1))
 
 // Intended to be called from inside components of a shader core.
 // Depends on a get_sid() function
@@ -45,7 +45,7 @@
     if (SHADER_DTRACE(x)) {\
         printf( SHADER_PRINT_STR,\
                 gpu_sim_cycle + gpu_tot_sim_cycle,\
-                Trace::trace_streams_str[Trace::x],\
+                Trace_gpgpu::trace_streams_str[Trace_gpgpu::x],\
                 get_sid() );\
         printf(__VA_ARGS__);\
     }\
@@ -57,7 +57,7 @@
     if (SHADER_DTRACE(WARP_SCHEDULER)) {\
         printf( SCHED_PRINT_STR,\
                 gpu_sim_cycle + gpu_tot_sim_cycle,\
-                Trace::trace_streams_str[Trace::WARP_SCHEDULER],\
+                Trace_gpgpu::trace_streams_str[Trace_gpgpu::WARP_SCHEDULER],\
                 get_sid(),\
                 m_id );\
         printf(__VA_ARGS__);\

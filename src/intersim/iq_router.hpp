@@ -13,7 +13,7 @@
 #include "buffer_state.hpp"
 #include "pipefifo.hpp"
 
-class IQRouter : public Router {
+class IQRouter : public Router_gpgpu {
    int _vcs;
    int _vc_size;
 

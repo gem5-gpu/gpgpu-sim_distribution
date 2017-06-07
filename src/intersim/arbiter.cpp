@@ -4,23 +4,23 @@
 #include "arbiter.hpp"
 
 
-Arbiter::Arbiter( const Configuration &,
+Arbiter_gpgpu::Arbiter_gpgpu( const Configuration &,
                   Module *parent, const string& name,
                   int inputs )
 : Module( parent, name ), _inputs( inputs )
 {
 }
 
-Arbiter::~Arbiter( )
+Arbiter_gpgpu::~Arbiter_gpgpu( )
 {
 }
 
-void Arbiter::Clear( )
+void Arbiter_gpgpu::Clear( )
 {
    _requests.clear( );
 }
 
-void Arbiter::AddRequest( int in, int label, int pri )
+void Arbiter_gpgpu::AddRequest( int in, int label, int pri )
 {
    sRequest r;
    list<sRequest>::iterator insert_point;
@@ -58,7 +58,7 @@ void Arbiter::AddRequest( int in, int label, int pri )
    }
 }
 
-void Arbiter::RemoveRequest( int in, int label )
+void Arbiter_gpgpu::RemoveRequest( int in, int label )
 {
    list<sRequest>::iterator erase_point;
 
@@ -72,7 +72,7 @@ void Arbiter::RemoveRequest( int in, int label )
    _requests.erase( erase_point );
 }
 
-int Arbiter::Match( ) const
+int Arbiter_gpgpu::Match( ) const
 {
    return _match;
 }
@@ -81,19 +81,19 @@ int Arbiter::Match( ) const
 // PriorityArbiter
 //==================================================
 
-PriorityArbiter::PriorityArbiter( const Configuration &config,
+PriorityArbiter_gpgpu::PriorityArbiter_gpgpu( const Configuration &config,
                                   Module *parent, const string& name,
                                   int inputs ) 
-: Arbiter( config, parent, name, inputs )
+: Arbiter_gpgpu( config, parent, name, inputs )
 {
    _rr_ptr = 0;
 }
 
-PriorityArbiter::~PriorityArbiter( )
+PriorityArbiter_gpgpu::~PriorityArbiter_gpgpu( )
 {
 }
 
-void PriorityArbiter::Arbitrate( )
+void PriorityArbiter_gpgpu::Arbitrate( )
 {
    list<sRequest>::iterator p;
 

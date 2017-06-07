@@ -31,7 +31,7 @@
 #include "booksim.hpp"
 #include "buffer.hpp"
 
-Buffer::Buffer( const Configuration& config, int outputs, 
+Buffer_gpgpu::Buffer_gpgpu( const Configuration& config, int outputs,
 		Module *parent, const string& name ) :
 Module( parent, name ), _occupancy(0)
 {
@@ -56,14 +56,14 @@ Module( parent, name ), _occupancy(0)
 #endif
 }
 
-Buffer::~Buffer()
+Buffer_gpgpu::~Buffer_gpgpu()
 {
   for(vector<VC*>::iterator i = _vc.begin(); i != _vc.end(); ++i) {
     delete *i;
   }
 }
 
-void Buffer::AddFlit( int vc, Flit *f )
+void Buffer_gpgpu::AddFlit( int vc, Flit *f )
 {
   if(_occupancy >= _size) {
     Error("Flit buffer overflow.");
@@ -75,7 +75,7 @@ void Buffer::AddFlit( int vc, Flit *f )
 #endif
 }
 
-void Buffer::Display( ostream & os ) const
+void Buffer_gpgpu::Display( ostream & os ) const
 {
   for(vector<VC*>::const_iterator i = _vc.begin(); i != _vc.end(); ++i) {
     (*i)->Display(os);

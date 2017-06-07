@@ -420,10 +420,10 @@ void init_interconnect (char* config_file,
 
    RandomSeed( icnt_config.GetInt("seed") );
 
-   Network **net;
+   Network_gpgpu **net;
 
    traffic = new TrafficManager *[net_c];
-   net = new Network *[net_c];
+   net = new Network_gpgpu *[net_c];
 
    for (unsigned i=0;i<net_c;i++) {
       string topo;

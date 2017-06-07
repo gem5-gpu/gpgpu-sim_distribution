@@ -7,7 +7,7 @@
 #include "misc_utils.hpp"
 
 KNCube::KNCube( const Configuration &config, bool mesh ) :
-Network( config )
+Network_gpgpu( config )
 {
    _mesh = mesh;
 
@@ -51,7 +51,7 @@ void KNCube::_BuildNet( const Configuration &config )
          router_name << "_" << ( node / dim_offset ) % _k;
       }
 
-      _routers[node] = Router::NewRouter( config, this, router_name.str( ), 
+      _routers[node] = Router_gpgpu::NewRouter( config, this, router_name.str( ), 
                                           node, 2*_n + 1, 2*_n + 1 );
 
       router_name.seekp( 0, ios::beg );

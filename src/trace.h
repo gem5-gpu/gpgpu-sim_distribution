@@ -34,7 +34,7 @@
 extern unsigned long long  gpu_sim_cycle;
 extern unsigned long long  gpu_tot_sim_cycle;
 
-namespace Trace {
+namespace Trace_gpgpu {
 
 #define TS_TUP_BEGIN(X) enum X {
 #define TS_TUP(X) X
@@ -53,27 +53,27 @@ namespace Trace {
 
     void init();
 
-} // namespace Trace
+} // namespace Trace_gpgpu
 
 
 #if TRACING_ON
 
 #define SIM_PRINT_STR "GPGPU-Sim Cycle %llu: %s - "
-#define DTRACE(x) ((Trace::trace_streams_enabled[Trace::x]) && Trace::enabled)
-#define DPRINTF(x, ...) do {\
-    if (DTRACE(x)) {\
+#define GPGPUSIM_DTRACE(x) ((Trace_gpgpu::trace_streams_enabled[Trace_gpgpu::x]) && Trace_gpgpu::enabled)
+#define GPGPUSIM_DPRINTF(x, ...) do {\
+    if (GPGPUSIM_DTRACE(x)) {\
         printf( SIM_PRINT_STR,\
                 gpu_sim_cycle + gpu_tot_sim_cycle,\
-                Trace::trace_streams_str[Trace::x] );\
+                Trace_gpgpu::trace_streams_str[Trace_gpgpu::x] );\
         printf(__VA_ARGS__);\
     }\
 } while (0)
 
 
-#else 
+#else
 
-#define DTRACE(x) (false)
-#define DPRINTF(x, ...) do {} while (0)
+#define GPGPUSIM_DTRACE(x) (false)
+#define GPGPUSIM_DPRINTF(x, ...) do {} while (0)
 
 #endif  
 

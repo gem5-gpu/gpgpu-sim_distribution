@@ -69,7 +69,7 @@ EventRouter::EventRouter( const Configuration& config,
 
   for ( int i = 0; i < _inputs; ++i ) {
     module_name << "buf_" << i;
-    _buf[i] = new Buffer( config, _outputs, this, module_name.str( ) );
+    _buf[i] = new Buffer_gpgpu( config, _outputs, this, module_name.str( ) );
     module_name.seekp( 0, ios::beg );
     _active[i].resize(_vcs, false);
   }
@@ -309,7 +309,7 @@ void EventRouter::_ProcessWaiting( int output, int out_vc )
 void EventRouter::_IncomingFlits( )
 {
   Flit   *f;
-  Buffer *cur_buf;
+  Buffer_gpgpu *cur_buf;
 
   tArrivalEvent *aevt;
 
@@ -604,7 +604,7 @@ void EventRouter::_TransportArb( int input )
   tTransportEvent *tevt;
 
   int    output;
-  Buffer *cur_buf;
+  Buffer_gpgpu *cur_buf;
   Flit   *f;
   Credit *c;
 

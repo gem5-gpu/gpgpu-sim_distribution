@@ -15,7 +15,7 @@ vc_buf_size = 8;
 
 wait_for_tail_credit = 1;
 
-// Router architecture
+// Router_gpgpu architecture
 
 vc_allocator = select;
 sw_allocator = select;

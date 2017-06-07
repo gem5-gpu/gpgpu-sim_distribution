@@ -18,7 +18,7 @@ int gNumVCS;
 
 //=============================================================
 
-void singlerf( const Router *, const Flit *f, int, OutputSet *outputs, bool inject )
+void singlerf( const Router_gpgpu *, const Flit *f, int, OutputSet *outputs, bool inject )
 {
    outputs->Clear( );
    outputs->Add( f->dest, f->dest % gNumVCS ); // VOQing
@@ -125,7 +125,7 @@ void dor_next_torus( int cur, int dest, int in_port,
 
 //=============================================================
 
-void dim_order_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
+void dim_order_mesh( const Router_gpgpu *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
 {
    int out_port;
 
@@ -148,7 +148,7 @@ void dim_order_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *
 
 //=============================================================
 
-void dim_order_ni_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
+void dim_order_ni_mesh( const Router_gpgpu *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
 {
    int out_port;
    int vcs_per_dest = gNumVCS / gNodes;
@@ -195,7 +195,7 @@ int rand_min_intr_mesh( int src, int dest )
 
 //=============================================================
 
-void romm_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
+void romm_mesh( const Router_gpgpu *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
 {
    int out_port;
    int vc_min, vc_max;
@@ -226,7 +226,7 @@ void romm_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *outpu
 
 //=============================================================
 
-void romm_ni_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
+void romm_ni_mesh( const Router_gpgpu *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
 {
    int out_port;
    int vcs_per_dest = gNumVCS / gNodes;
@@ -253,7 +253,7 @@ void romm_ni_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *ou
 
 //=============================================================
 
-void min_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
+void min_adapt_mesh( const Router_gpgpu *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
 {
    int out_port;
    int cur, dest;
@@ -298,7 +298,7 @@ void min_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *
 
 //=============================================================
 
-void planar_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
+void planar_adapt_mesh( const Router_gpgpu *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
 {
    int cur, dest;
    int vc_mult;
@@ -448,7 +448,7 @@ void planar_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSe
 
 //=============================================================
 
-void limited_adapt_mesh_old( const Router *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
+void limited_adapt_mesh_old( const Router_gpgpu *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
 {
    int in_vc;
    int in_dim;
@@ -544,7 +544,7 @@ void limited_adapt_mesh_old( const Router *r, const Flit *f, int in_channel, Out
    } 
 }
 
-void limited_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
+void limited_adapt_mesh( const Router_gpgpu *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
 {
    int min_port;
 
@@ -598,7 +598,7 @@ void limited_adapt_mesh( const Router *r, const Flit *f, int in_channel, OutputS
 
 //=============================================================
 
-void valiant_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
+void valiant_mesh( const Router_gpgpu *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
 {
    int out_port;
    int vc_min, vc_max;
@@ -630,7 +630,7 @@ void valiant_mesh( const Router *r, const Flit *f, int in_channel, OutputSet *ou
 
 //=============================================================
 
-void valiant_torus( const Router *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
+void valiant_torus( const Router_gpgpu *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
 {
    int out_port;
    int vc_min, vc_max;
@@ -676,7 +676,7 @@ void valiant_torus( const Router *r, const Flit *f, int in_channel, OutputSet *o
 
 //=============================================================
 
-void valiant_ni_torus( const Router *r, const Flit *f, int in_channel, 
+void valiant_ni_torus( const Router_gpgpu *r, const Flit *f, int in_channel, 
                        OutputSet *outputs, bool inject )
 {
    int out_port;
@@ -731,7 +731,7 @@ void valiant_ni_torus( const Router *r, const Flit *f, int in_channel,
 
 //=============================================================
 
-void dim_order_torus( const Router *r, const Flit *f, int in_channel, 
+void dim_order_torus( const Router_gpgpu *r, const Flit *f, int in_channel, 
                       OutputSet *outputs, bool inject )
 {
    int cur;
@@ -767,7 +767,7 @@ void dim_order_torus( const Router *r, const Flit *f, int in_channel,
 
 //=============================================================
 
-void dim_order_ni_torus( const Router *r, const Flit *f, int in_channel, 
+void dim_order_ni_torus( const Router_gpgpu *r, const Flit *f, int in_channel, 
                          OutputSet *outputs, bool inject )
 {
    int cur;
@@ -797,7 +797,7 @@ void dim_order_ni_torus( const Router *r, const Flit *f, int in_channel,
 
 //=============================================================
 
-void dim_order_bal_torus( const Router *r, const Flit *f, int in_channel, 
+void dim_order_bal_torus( const Router_gpgpu *r, const Flit *f, int in_channel, 
                           OutputSet *outputs, bool inject )
 {
    int cur;
@@ -833,7 +833,7 @@ void dim_order_bal_torus( const Router *r, const Flit *f, int in_channel,
 
 //=============================================================
 
-void min_adapt_torus( const Router *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
+void min_adapt_torus( const Router_gpgpu *r, const Flit *f, int in_channel, OutputSet *outputs, bool inject )
 {
    int cur, dest, dist2;
    int in_vc;
@@ -895,7 +895,7 @@ void min_adapt_torus( const Router *r, const Flit *f, int in_channel, OutputSet 
 
 //=============================================================
 
-void dest_tag( const Router *r, const Flit *f, int in_channel, 
+void dest_tag( const Router_gpgpu *r, const Flit *f, int in_channel, 
                OutputSet *outputs, bool inject )
 {
    outputs->Clear( );
@@ -915,7 +915,7 @@ void dest_tag( const Router *r, const Flit *f, int in_channel,
 
 //=============================================================
 
-void chaos_torus( const Router *r, const Flit *f, 
+void chaos_torus( const Router_gpgpu *r, const Flit *f, 
                   int in_channel, OutputSet *outputs, bool inject )
 {
    int cur, dest;
@@ -951,7 +951,7 @@ void chaos_torus( const Router *r, const Flit *f,
 
 //=============================================================
 
-void chaos_mesh( const Router *r, const Flit *f, 
+void chaos_mesh( const Router_gpgpu *r, const Flit *f, 
                  int in_channel, OutputSet *outputs, bool inject )
 {
    int cur, dest;

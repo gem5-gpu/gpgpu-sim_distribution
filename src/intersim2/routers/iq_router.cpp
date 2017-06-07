@@ -85,7 +85,7 @@ IQRouter::IQRouter( Configuration const & config, Module *parent,
   for ( int i = 0; i < _inputs; ++i ) {
     ostringstream module_name;
     module_name << "buf_" << i;
-    _buf[i] = new Buffer(config, _outputs, this, module_name.str( ) );
+    _buf[i] = new Buffer_gpgpu(config, _outputs, this, module_name.str( ) );
     module_name.str("");
   }
 
@@ -351,7 +351,7 @@ void IQRouter::_InputQueuing( )
     int const vc = f->vc;
     assert((vc >= 0) && (vc < _vcs));
 
-    Buffer * const cur_buf = _buf[input];
+    Buffer_gpgpu * const cur_buf = _buf[input];
 
     if(f->watch) {
       *gWatchOut << GetSimTime() << " | " << FullName() << " | "
@@ -477,7 +477,7 @@ void IQRouter::_RouteEvaluate( )
     int const vc = iter->second.second;
     assert((vc >= 0) && (vc < _vcs));
 
-    Buffer const * const cur_buf = _buf[input];
+    Buffer_gpgpu const * const cur_buf = _buf[input];
     assert(!cur_buf->Empty(vc));
     assert(cur_buf->GetState(vc) == VC::routing);
 
@@ -515,7 +515,7 @@ void IQRouter::_RouteUpdate( )
     int const vc = item.second.second;
     assert((vc >= 0) && (vc < _vcs));
     
-    Buffer * const cur_buf = _buf[input];
+    Buffer_gpgpu * const cur_buf = _buf[input];
     assert(!cur_buf->Empty(vc));
     assert(cur_buf->GetState(vc) == VC::routing);
 
@@ -572,7 +572,7 @@ void IQRouter::_VCAllocEvaluate( )
 
     assert(iter->second.second == -1);
 
-    Buffer const * const cur_buf = _buf[input];
+    Buffer_gpgpu const * const cur_buf = _buf[input];
     assert(!cur_buf->Empty(vc));
     assert(cur_buf->GetState(vc) == VC::vc_alloc);
 
@@ -726,7 +726,7 @@ void IQRouter::_VCAllocEvaluate( )
 
     assert(iter->second.second == -1);
 
-    Buffer const * const cur_buf = _buf[input];
+    Buffer_gpgpu const * const cur_buf = _buf[input];
     assert(!cur_buf->Empty(vc));
     assert(cur_buf->GetState(vc) == VC::vc_alloc);
 
@@ -803,7 +803,7 @@ void IQRouter::_VCAllocEvaluate( )
       int const vc = iter->second.first.second;
       assert((vc >= 0) && (vc < _vcs));
       
-      Buffer const * const cur_buf = _buf[input];
+      Buffer_gpgpu const * const cur_buf = _buf[input];
       assert(!cur_buf->Empty(vc));
       assert(cur_buf->GetState(vc) == VC::vc_alloc);
       
@@ -858,7 +858,7 @@ void IQRouter::_VCAllocUpdate( )
     
     assert(item.second.second != -1);
 
-    Buffer * const cur_buf = _buf[input];
+    Buffer_gpgpu * const cur_buf = _buf[input];
     assert(!cur_buf->Empty(vc));
     assert(cur_buf->GetState(vc) == VC::vc_alloc);
     
@@ -949,7 +949,7 @@ void IQRouter::_SWHoldEvaluate( )
     
     assert(iter->second.second == -1);
 
-    Buffer const * const cur_buf = _buf[input];
+    Buffer_gpgpu const * const cur_buf = _buf[input];
     assert(!cur_buf->Empty(vc));
     assert(cur_buf->GetState(vc) == VC::active);
     
@@ -1023,7 +1023,7 @@ void IQRouter::_SWHoldUpdate( )
     
     assert(item.second.second != -1);
 
-    Buffer * const cur_buf = _buf[input];
+    Buffer_gpgpu * const cur_buf = _buf[input];
     assert(!cur_buf->Empty(vc));
     assert(cur_buf->GetState(vc) == VC::active);
     
@@ -1234,7 +1234,7 @@ bool IQRouter::_SWAllocAddReq(int input, int vc, int output)
   int const expanded_input = input * _input_speedup + vc % _input_speedup;
   int const expanded_output = output * _output_speedup + input % _output_speedup;
   
-  Buffer const * const cur_buf = _buf[input];
+  Buffer_gpgpu const * const cur_buf = _buf[input];
   assert(!cur_buf->Empty(vc));
   assert((cur_buf->GetState(vc) == VC::active) || 
 	 (_speculative && (cur_buf->GetState(vc) == VC::vc_alloc)));
@@ -1346,7 +1346,7 @@ void IQRouter::_SWAllocEvaluate( )
 
     assert(_switch_hold_vc[input * _input_speedup + vc % _input_speedup] != vc);
 
-    Buffer const * const cur_buf = _buf[input];
+    Buffer_gpgpu const * const cur_buf = _buf[input];
     assert(!cur_buf->Empty(vc));
     assert((cur_buf->GetState(vc) == VC::active) || 
 	   (_speculative && (cur_buf->GetState(vc) == VC::vc_alloc)));
@@ -1513,7 +1513,7 @@ void IQRouter::_SWAllocEvaluate( )
 
     assert(iter->second.second == -1);
 
-    Buffer const * const cur_buf = _buf[input];
+    Buffer_gpgpu const * const cur_buf = _buf[input];
     assert(!cur_buf->Empty(vc));
     assert((cur_buf->GetState(vc) == VC::active) || 
 	   (_speculative && (cur_buf->GetState(vc) == VC::vc_alloc)));
@@ -1663,7 +1663,7 @@ void IQRouter::_SWAllocEvaluate( )
       int const expanded_input = input * _input_speedup + vc % _input_speedup;
       assert(_switch_hold_vc[expanded_input] != vc);
       
-      Buffer const * const cur_buf = _buf[input];
+      Buffer_gpgpu const * const cur_buf = _buf[input];
       assert(!cur_buf->Empty(vc));
       assert((cur_buf->GetState(vc) == VC::active) ||
 	     (_speculative && (cur_buf->GetState(vc) == VC::vc_alloc)));
@@ -1850,7 +1850,7 @@ void IQRouter::_SWAllocUpdate( )
     int const vc = item.second.first.second;
     assert((vc >= 0) && (vc < _vcs));
     
-    Buffer * const cur_buf = _buf[input];
+    Buffer_gpgpu * const cur_buf = _buf[input];
     assert(!cur_buf->Empty(vc));
     assert((cur_buf->GetState(vc) == VC::active) ||
 	   (_speculative && (cur_buf->GetState(vc) == VC::vc_alloc)));

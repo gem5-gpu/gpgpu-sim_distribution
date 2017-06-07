@@ -3,7 +3,7 @@
 
 #include "network.hpp"
 
-class KNCube : public Network {
+class KNCube : public Network_gpgpu {
 
    bool _mesh;
 

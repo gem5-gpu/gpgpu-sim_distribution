@@ -16,7 +16,7 @@ extern int gK;
 
 extern int gNodes;
 
-class Network : public Module {
+class Network_gpgpu : public Module {
 protected:
 
    int _size;
@@ -24,7 +24,7 @@ protected:
    int _dests;
    int _channels;
 
-   Router **_routers;
+   Router_gpgpu **_routers;
 
    Flit   **_inject;
    Credit **_inject_cred;
@@ -44,8 +44,8 @@ protected:
    void _Alloc( );
 
 public:
-   Network( const Configuration &config );
-   virtual ~Network( );
+   Network_gpgpu( const Configuration &config );
+   virtual ~Network_gpgpu( );
 
    void WriteFlit( Flit *f, int source );
    Flit *ReadFlit( int dest );

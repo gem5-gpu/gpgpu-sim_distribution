@@ -68,7 +68,7 @@ public:
    void SetInputVC( int vc, int in_vc );
 };
 
-class EventRouter : public Router {
+class EventRouter : public Router_gpgpu {
    int _vcs;
    int _vc_size;
 
@@ -103,7 +103,7 @@ class EventRouter : public Router {
 
    PipelineFIFO<tArrivalEvent> *_arrival_pipe;
    queue<tArrivalEvent *>      *_arrival_queue;
-   PriorityArbiter             **_arrival_arbiter;
+   PriorityArbiter_gpgpu             **_arrival_arbiter;
 
    struct tTransportEvent {
       int  input;
@@ -115,7 +115,7 @@ class EventRouter : public Router {
    };
 
    queue<tTransportEvent *> *_transport_queue;
-   PriorityArbiter          **_transport_arbiter;
+   PriorityArbiter_gpgpu          **_transport_arbiter;
 
    bool *_transport_free;
    int  *_transport_match;

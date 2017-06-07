@@ -7,7 +7,7 @@
 #include "iq_router.hpp"
 #include "event_router.hpp"
 
-Router::Router( const Configuration& config,
+Router_gpgpu::Router_gpgpu( const Configuration& config,
                 Module *parent, string name, int id,
                 int inputs, int outputs ) :
 Module( parent, name ),
@@ -33,7 +33,7 @@ _outputs( outputs )
    _channel_faults  = new vector<bool>;
 }
 
-Router::~Router( )
+Router_gpgpu::~Router_gpgpu( )
 {
    delete _input_channels;
    delete _input_credits;
@@ -42,7 +42,7 @@ Router::~Router( )
    delete _channel_faults;
 }
 
-Credit *Router::_NewCredit( int vcs )
+Credit *Router_gpgpu::_NewCredit( int vcs )
 {
    Credit *c;
 
@@ -50,48 +50,48 @@ Credit *Router::_NewCredit( int vcs )
    return c;
 }
 
-void Router::_RetireCredit( Credit *c )
+void Router_gpgpu::_RetireCredit( Credit *c )
 {
    delete c;
 }
 
-void Router::AddInputChannel( Flit **channel, Credit **backchannel )
+void Router_gpgpu::AddInputChannel( Flit **channel, Credit **backchannel )
 {
    _input_channels->push_back( channel );
    _input_credits->push_back( backchannel );
 }
 
-void Router::AddOutputChannel( Flit **channel, Credit **backchannel )
+void Router_gpgpu::AddOutputChannel( Flit **channel, Credit **backchannel )
 {
    _output_channels->push_back( channel );
    _output_credits->push_back( backchannel );
    _channel_faults->push_back( false );
 }
 
-int Router::GetID( ) const
+int Router_gpgpu::GetID( ) const
 {
    return _id;
 }
 
-void Router::OutChannelFault( int c, bool fault )
+void Router_gpgpu::OutChannelFault( int c, bool fault )
 {
    assert( ( c >= 0 ) && ( c < (int)_channel_faults->size( ) ) );
 
    (*_channel_faults)[c] = fault;
 }
 
-bool Router::IsFaultyOutput( int c ) const
+bool Router_gpgpu::IsFaultyOutput( int c ) const
 {
    assert( ( c >= 0 ) && ( c < (int)_channel_faults->size( ) ) );
 
    return(*_channel_faults)[c];
 }
 
-Router *Router::NewRouter( const Configuration& config,
+Router_gpgpu *Router_gpgpu::NewRouter( const Configuration& config,
                            Module *parent, string name, int id,
                            int inputs, int outputs )
 {
-   Router *r;
+   Router_gpgpu *r;
    string type;
 
    config.GetStr( "router", type );

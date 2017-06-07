@@ -28,7 +28,7 @@
 #include "trace.h"
 #include "string.h"
 
-namespace Trace {
+namespace Trace_gpgpu {
 
 
 #define TS_TUP_BEGIN(X) const char* trace_streams_str[] = {

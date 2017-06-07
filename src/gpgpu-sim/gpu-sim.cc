@@ -423,18 +423,18 @@ void gpgpu_sim_config::reg_options(option_parser_t opp)
                           &g_visualizer_zlevel, "Compression level of the visualizer output log (0=no comp, 9=highest)",
                           "6");
     option_parser_register(opp, "-trace_enabled", OPT_BOOL, 
-                          &Trace::enabled, "Turn on traces",
+                          &Trace_gpgpu::enabled, "Turn on traces",
                           "0");
     option_parser_register(opp, "-trace_components", OPT_CSTR, 
-                          &Trace::config_str, "comma seperated list of traces to enable. "
+                          &Trace_gpgpu::config_str, "comma seperated list of traces to enable. "
                           "Complete list found in trace_streams.tup. "
                           "Default none",
                           "none");
     option_parser_register(opp, "-trace_sampling_core", OPT_INT32, 
-                          &Trace::sampling_core, "The core which is printed using CORE_DPRINTF. Default 0",
+                          &Trace_gpgpu::sampling_core, "The core which is printed using CORE_DPRINTF. Default 0",
                           "0");
     option_parser_register(opp, "-trace_sampling_memory_partition", OPT_INT32, 
-                          &Trace::sampling_memory_partition, "The memory partition which is printed using MEMPART_DPRINTF. Default -1 (i.e. all)",
+                          &Trace_gpgpu::sampling_memory_partition, "The memory partition which is printed using MEMPART_DPRINTF. Default -1 (i.e. all)",
                           "-1");
    ptx_file_line_stats_options(opp);
 }

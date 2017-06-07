@@ -3,7 +3,7 @@
 
 #include "network.hpp"
 
-class SingleNet : public Network {
+class SingleNet : public Network_gpgpu {
 
    void _ComputeSize( const Configuration &config );
    void _BuildNet( const Configuration &config );

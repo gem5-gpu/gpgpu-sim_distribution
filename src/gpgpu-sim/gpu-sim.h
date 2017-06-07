@@ -290,7 +290,7 @@ public:
         m_memory_config.init();
         init_clock_domains(); 
         power_config::init();
-        Trace::init();
+        Trace_gpgpu::init();
 
 
         // initialize file name if it is not set 

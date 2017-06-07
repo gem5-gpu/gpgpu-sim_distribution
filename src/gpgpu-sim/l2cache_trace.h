@@ -32,7 +32,7 @@
 #if TRACING_ON
 
 #define MEMPART_PRINT_STR SIM_PRINT_STR " %d - "
-#define MEMPART_DTRACE(x)  ( DTRACE(x) && (Trace::sampling_memory_partition == -1 || Trace::sampling_memory_partition == (int)get_mpid()) )
+#define MEMPART_DTRACE(x)  ( GPGPUSIM_DTRACE(x) && (Trace_gpgpu::sampling_memory_partition == -1 || Trace_gpgpu::sampling_memory_partition == (int)get_mpid()) )
 
 // Intended to be called from inside components of a memory partition
 // Depends on a get_mpid() function
@@ -40,7 +40,7 @@
     if (MEMPART_DTRACE(MEMORY_PARTITION_UNIT)) {\
         printf( MEMPART_PRINT_STR,\
                 gpu_sim_cycle + gpu_tot_sim_cycle,\
-                Trace::trace_streams_str[Trace::MEMORY_PARTITION_UNIT],\
+                Trace_gpgpu::trace_streams_str[Trace_gpgpu::MEMORY_PARTITION_UNIT],\
                 get_mpid() );\
         printf(__VA_ARGS__);\
     }\

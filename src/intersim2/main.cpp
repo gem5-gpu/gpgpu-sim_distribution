@@ -168,6 +168,7 @@ bool Simulate( BookSimConfig const & config )
     return result;
 }
 
+#define CREATE_LIBRARY
 #ifdef CREATE_LIBRARY
 
 #else

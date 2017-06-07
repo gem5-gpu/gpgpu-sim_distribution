@@ -42,7 +42,7 @@ using namespace std;
 class VC;
 class Flit;
 class Credit;
-class Buffer;
+class Buffer_gpgpu;
 class BufferState;
 class Allocator;
 class SwitchMonitor;
@@ -80,7 +80,7 @@ class IQRouter : public Router {
 
   map<int, Credit *> _out_queue_credits;
 
-  vector<Buffer *> _buf;
+  vector<Buffer_gpgpu *> _buf;
   vector<BufferState *> _next_buf;
 
   Allocator *_vc_allocator;
