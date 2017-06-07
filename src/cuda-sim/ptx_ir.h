@@ -620,7 +620,7 @@ public:
    {
       assert(idx < 4);
       const symbol *result = m_value.m_vector_symbolic[idx];
-      assert( result != NULL );
+      //assert( result != NULL );
       return result;
    }
 

@@ -1541,7 +1541,7 @@ std::set<std::string>   g_constants;
 
 void gpgpu_ptx_sim_register_const_variable(void *hostVar, const char *deviceName, size_t size )
 {
-   printf("GPGPU-Sim PTX registering constant %s (%zu bytes) to name mapping\n", deviceName, size );
+   printf("GPGPU-Sim PTX registering constant %s (%zu bytes) to name mapping (%p)\n", deviceName, size, hostVar);
    g_const_name_lookup[hostVar] = deviceName;
 }
 
