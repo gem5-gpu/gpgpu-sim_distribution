@@ -462,7 +462,6 @@ void add_identifier( const char *identifier, int array_dim, unsigned array_ident
       g_sym_name_to_symbol_table[ identifier ] = g_current_symbol_table;
       break;
    case local_space:
-      panic("local memory allocation is untested!");
       if( g_func_info == NULL ) {
           printf("GPGPU-Sim PTX: allocating local region for \"%s\" ", identifier);
          fflush(stdout);
@@ -475,6 +474,10 @@ void add_identifier( const char *identifier, int array_dim, unsigned array_ident
          fflush(stdout);
          g_last_symbol->set_address( addr+addr_pad);
          g_current_symbol_table->alloc_local( num_bits/8 + addr_pad);
+         // To signal gem5-gpu to allocate local memory for the GPU, add the
+         // local allocation to the global symbol table
+         g_global_symbol_table->alloc_local(num_bits/8 + addr_pad);
+         panic("gem5-gpu: This local memory path is untested!");
       } else {
         printf("GPGPU-Sim PTX: allocating stack frame region for .local \"%s\" ",
                identifier);
@@ -487,7 +490,11 @@ void add_identifier( const char *identifier, int array_dim, unsigned array_ident
                 addr+addr_pad + num_bits/8);
         fflush(stdout);
         g_last_symbol->set_address( addr+addr_pad );
+        assert(g_current_symbol_table != g_global_symbol_table);
         g_current_symbol_table->alloc_local( num_bits/8 + addr_pad);
+        // To signal gem5-gpu to allocate local memory for the GPU, add the
+        // local allocation to the global symbol table
+        g_global_symbol_table->alloc_local(num_bits/8 + addr_pad);
         g_func_info->set_framesize( g_current_symbol_table->get_local_next() );
       }
       break;
@@ -503,6 +510,9 @@ void add_identifier( const char *identifier, int array_dim, unsigned array_ident
       assert( (num_bits%8) == 0  );
       g_last_symbol->set_address( g_current_symbol_table->get_local_next() );
       g_current_symbol_table->alloc_local( num_bits/8 );
+      // To signal gem5-gpu to allocate local memory for the GPU, add the
+      // local allocation to the global symbol table
+      g_global_symbol_table->alloc_local(num_bits/8 + addr_pad);
       g_func_info->set_framesize( g_current_symbol_table->get_local_next() );
       break;
    case param_space_kernel:

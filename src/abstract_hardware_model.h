@@ -849,7 +849,7 @@ public:
     void set_data( unsigned n, const uint8_t *_data )
     {
         assert( op == STORE_OP );
-        assert( space == global_space || space == const_space );
+        assert( space == global_space || space == const_space || space == local_space );
         assert( m_per_scalar_thread_valid );
         assert( !m_per_scalar_thread[n].data_valid );
         m_per_scalar_thread[n].data_valid = true;

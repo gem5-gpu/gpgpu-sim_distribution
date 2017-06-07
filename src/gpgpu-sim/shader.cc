@@ -1116,6 +1116,7 @@ unsigned shader_core_ctx::translate_local_memaddr( address_type localaddr, unsig
                        + tid % kernel_padded_threads_per_cta); 
       max_concurrent_threads = kernel_padded_threads_per_cta * kernel_max_cta_per_shader * num_shader;
    } else {
+      panic("gem5-gpu does not work with legacy local mapping!\n");
       // legacy mapping that maps the same address in the local memory space of all threads 
       // to a single contiguous address region 
       thread_base = 4*(m_config->n_thread_per_shader * m_sid + tid);
@@ -1135,7 +1136,8 @@ unsigned shader_core_ctx::translate_local_memaddr( address_type localaddr, unsig
       assert(localaddr%4 == 0); // Address must be 4B aligned - required if accessing 4B per request, otherwise access will overflow into next thread's space
       for(unsigned i=0; i<num_accesses; i++) {
           address_type local_word = localaddr/4 + i;
-          address_type linear_address = local_word*max_concurrent_threads*4 + thread_base + LOCAL_GENERIC_START;
+          address_type linear_address = local_word*max_concurrent_threads*4 + thread_base + get_gpu()->gem5CudaGPU->getLocalBaseVaddr();
+          assert(linear_address < get_gpu()->gem5CudaGPU->getLocalBaseVaddr() + (LOCAL_MEM_SIZE_MAX * max_concurrent_threads));
           translated_addrs[i] = linear_address;
       }
    } else {
@@ -1145,7 +1147,8 @@ unsigned shader_core_ctx::translate_local_memaddr( address_type localaddr, unsig
       address_type local_word = localaddr/4;
       address_type local_word_offset = localaddr%4;
       assert( (localaddr+datasize-1)/4  == local_word ); // Make sure access doesn't overflow into next 4B chunk
-      address_type linear_address = local_word*max_concurrent_threads*4 + local_word_offset + thread_base + LOCAL_GENERIC_START;
+      address_type linear_address = local_word*max_concurrent_threads*4 + local_word_offset + thread_base + get_gpu()->gem5CudaGPU->getLocalBaseVaddr();
+      assert(linear_address < get_gpu()->gem5CudaGPU->getLocalBaseVaddr() + (LOCAL_MEM_SIZE_MAX * max_concurrent_threads));
       translated_addrs[0] = linear_address;
    }
    return num_accesses;
@@ -1451,7 +1454,11 @@ bool ldst_unit::memory_cycle_gem5( warp_inst_t &inst, mem_stage_stall_type &stal
     if( inst.empty()) {
         return true;
     }
-    if (inst.space.get_type() != global_space && inst.space.get_type() != const_space && inst.op != BARRIER_OP && inst.op != MEMORY_BARRIER_OP) {
+    if (inst.space.get_type() != global_space &&
+        inst.space.get_type() != const_space &&
+        inst.space.get_type() != local_space &&
+        inst.op != BARRIER_OP &&
+        inst.op != MEMORY_BARRIER_OP) {
         return memory_cycle(inst, stall_reason, access_type);
     }
     if( inst.active_count() == 0 ) {

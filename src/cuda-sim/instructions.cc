@@ -2123,7 +2123,7 @@ void decode_space( memory_space_t &space, ptx_thread_info *thread, const operand
    case global_space: mem = thread->get_global_memory(); break;
    case param_space_local:
    case local_space:
-      mem = thread->m_local_mem; 
+      mem = thread->get_global_memory();
       addr += thread->get_local_mem_stack_pointer();
       break; 
    case tex_space:    mem = thread->get_tex_memory(); break; 
@@ -2137,7 +2137,7 @@ void decode_space( memory_space_t &space, ptx_thread_info *thread, const operand
          space = whichspace(addr);
          switch ( space.get_type() ) {
          case global_space: mem = thread->get_global_memory(); addr = generic_to_global(addr); break;
-         case local_space:  mem = thread->m_local_mem; addr = generic_to_local(smid,hwtid,addr); break; 
+         case local_space:  mem = thread->get_global_memory(); addr = generic_to_local(smid,hwtid,addr); break;
          case shared_space: mem = thread->m_shared_mem; addr = generic_to_shared(smid,addr); break; 
          default: abort();
          }
@@ -2172,7 +2172,9 @@ void ld_exec( const ptx_instruction *pI, ptx_thread_info *thread )
 
    thread->get_gpu()->gem5CudaGPU->getCudaCore(thread->get_hw_sid())->record_ld(space);
 
-   if (space.get_type() != global_space && space.get_type() != const_space) {
+   if (space.get_type() != global_space &&
+       space.get_type() != const_space &&
+       space.get_type() != local_space) {
        size_t size;
        int t;
        data.u64=0;
@@ -3541,7 +3543,9 @@ void st_impl( const ptx_instruction *pI, ptx_thread_info *thread )
    decode_space(space,thread,dst,mem,addr);
    thread->get_gpu()->gem5CudaGPU->getCudaCore(thread->get_hw_sid())->record_st(space);
 
-   if (space.get_type() != global_space && space.get_type() != const_space) {
+   if (space.get_type() != global_space &&
+       space.get_type() != const_space &&
+       space.get_type() != local_space) {
        size_t size;
        int t;
        type_info_key::type_decode(type,size,t);

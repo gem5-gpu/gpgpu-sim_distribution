@@ -1484,7 +1484,7 @@ void ptx_thread_info::ptx_exec_inst( warp_inst_t &inst, unsigned lane_id)
       inst.set_addr(lane_id, insn_memaddr);
       inst.data_size = insn_data_size; // simpleAtomicIntrinsics
       assert( inst.memory_op == insn_memory_op );
-      if (insn_memory_op == memory_store && (insn_space == global_space || insn_space == const_space)) {
+      if (insn_memory_op == memory_store && (insn_space == global_space || insn_space == const_space || insn_space == local_space)) {
          // Need to save data to be written for stores
          uint8_t data[MAX_DATA_BYTES_PER_INSN_PER_THREAD];
          readRegister(inst, lane_id, (char*)&data[0]);

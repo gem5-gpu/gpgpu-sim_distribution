@@ -183,8 +183,8 @@ void warp_inst_t::generate_mem_accesses()
         return; 
     if( m_warp_active_mask.count() == 0 ) 
         return; // predicated off
-    // In gem5-gpu, global and const references go through the gem5-gpu LSQ
-    if( space.get_type() == global_space || space.get_type() == const_space )
+    // In gem5-gpu, global, const and local references go through the gem5-gpu LSQ
+    if( space.get_type() == global_space || space.get_type() == const_space || space.get_type() == local_space )
         return;
 
     const size_t starting_queue_size = m_accessq.size();
