@@ -1112,6 +1112,7 @@ public:
         switch(inst.op) {
         case LOAD_OP: break;
         case STORE_OP: break;
+        case BARRIER_OP: break;
         case MEMORY_BARRIER_OP: break;
         default: return false;
         }
@@ -1620,6 +1621,14 @@ public:
     
     // accessors
     virtual bool warp_waiting_at_barrier( unsigned warp_id ) const;
+    void warp_reaches_barrier(warp_inst_t &inst);
+    bool fence_unblock_needed(unsigned warp_id) {
+        return m_warp[warp_id].get_membar();
+    }
+    void complete_fence(unsigned warp_id) {
+        assert(m_warp[warp_id].get_membar());
+        m_warp[warp_id].clear_membar();
+    }
     void get_pdom_stack_top_info( unsigned tid, unsigned *pc, unsigned *rpc ) const;
 
 // used by pipeline timing model components:

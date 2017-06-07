@@ -685,6 +685,10 @@ void shader_core_ctx::func_exec_inst( warp_inst_t &inst )
         inst.generate_mem_accesses();
 }
 
+void shader_core_ctx::warp_reaches_barrier(warp_inst_t &inst) {
+    m_barriers.warp_reaches_barrier(m_warp[inst.warp_id()].get_cta_id(), inst.warp_id());
+}
+
 void shader_core_ctx::issue_warp( register_set& pipe_reg_set, const warp_inst_t* next_inst, const active_mask_t &active_mask, unsigned warp_id )
 {
     warp_inst_t** pipe_reg = pipe_reg_set.get_free();
@@ -696,10 +700,6 @@ void shader_core_ctx::issue_warp( register_set& pipe_reg_set, const warp_inst_t*
     (*pipe_reg)->issue( active_mask, warp_id, gpu_tot_sim_cycle + gpu_sim_cycle, m_warp[warp_id].get_dynamic_warp_id() ); // dynamic instruction information
     m_stats->shader_cycle_distro[2+(*pipe_reg)->active_count()]++;
     func_exec_inst( **pipe_reg );
-    if( next_inst->op == BARRIER_OP ) 
-        m_barriers.warp_reaches_barrier(m_warp[warp_id].get_cta_id(),warp_id);
-    else if( next_inst->op == MEMORY_BARRIER_OP ) 
-        m_warp[warp_id].set_membar();
 
     updateSIMTStack(warp_id,*pipe_reg);
     m_scoreboard->reserveRegisters(*pipe_reg);
@@ -851,12 +851,21 @@ void scheduler_unit::cycle()
                         ready_inst = true;
                         const active_mask_t &active_mask = m_simt_stack[warp_id]->get_active_mask();
                         assert( warp(warp_id).inst_in_pipeline() );
-                        if ( (pI->op == LOAD_OP) || (pI->op == STORE_OP) || (pI->op == MEMORY_BARRIER_OP) ) {
+                        if ( (pI->op == LOAD_OP) || (pI->op == STORE_OP) || (pI->op == MEMORY_BARRIER_OP) || (pI->op == BARRIER_OP) ) {
                             if( m_mem_out->has_free() ) {
                                 m_shader->issue_warp(*m_mem_out,pI,active_mask,warp_id);
                                 issued++;
                                 issued_inst=true;
                                 warp_inst_issued = true;
+                                if ( (pI->op == MEMORY_BARRIER_OP) || (pI->op == BARRIER_OP) ) {
+                                    // Block this warp from issuing instructions
+                                    // while completing memory fence operation
+                                    // Note: This organization disallows a warp
+                                    // from arriving at a bar.sync (BARRIER_OP)
+                                    // until after the implicit (membar.cta)
+                                    // fence is completed by the LSQ
+                                    warp(warp_id).set_membar();
+                                }
                             }
                         } else {
                             bool sp_pipe_avail = m_sp_out->has_free();
@@ -1442,7 +1451,7 @@ bool ldst_unit::memory_cycle_gem5( warp_inst_t &inst, mem_stage_stall_type &stal
     if( inst.empty()) {
         return true;
     }
-    if (inst.space.get_type() != global_space && inst.space.get_type() != const_space) {
+    if (inst.space.get_type() != global_space && inst.space.get_type() != const_space && inst.op != BARRIER_OP && inst.op != MEMORY_BARRIER_OP) {
         return memory_cycle(inst, stall_reason, access_type);
     }
     if( inst.active_count() == 0 ) {
@@ -2745,10 +2754,7 @@ bool shader_core_ctx::warp_waiting_at_barrier( unsigned warp_id ) const
 
 bool shader_core_ctx::warp_waiting_at_mem_barrier( unsigned warp_id ) 
 {
-   if( !m_warp[warp_id].get_membar() ) 
-      return false;
-   if( !m_scoreboard->pendingWrites(warp_id) ) {
-      m_warp[warp_id].clear_membar();
+   if( !m_warp[warp_id].get_membar() ) {
       return false;
    }
    return true;
