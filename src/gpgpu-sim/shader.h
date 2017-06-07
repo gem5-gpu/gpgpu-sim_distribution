@@ -784,6 +784,7 @@ private:
       const active_mask_t & get_active_mask() const { return m_warp->get_active_mask(); }
       unsigned get_sp_op() const { return m_warp->sp_op; }
       unsigned get_id() const { return m_cuid; } // returns CU hw id
+      unsigned get_inst_uniq_id() { return m_warp->get_uid(); }
 
       // modifiers
       void init(unsigned n, 
@@ -832,14 +833,26 @@ private:
 
       collector_unit_t *find_ready()
       {
+         unsigned least_inst_uid = (unsigned)-1;
+         collector_unit_t *to_return = NULL;
+         // gem5-gpu NOTE: gem5-gpu requires that all memory instructions be
+         // issued in-order to the load-store queues to correctly enforce
+         // fences. GPGPU-Sim did not have this requirement, so this ready
+         // instruction select code is different than GPGPU-Sim.
          for( unsigned n=0; n < m_num_collectors; n++ ) {
-            unsigned c=(m_last_cu+n+1)%m_num_collectors;
-            if( (*m_collector_units)[c].ready() ) {
-               m_last_cu=c;
-               return &((*m_collector_units)[c]);
+            collector_unit_t *cu = &((*m_collector_units)[n]);
+            if( !cu->is_free() ) {
+               if( cu->get_inst_uniq_id() < least_inst_uid ) {
+                  least_inst_uid = cu->get_inst_uniq_id();
+                  if( cu->ready() ) {
+                     to_return = cu;
+                  } else {
+                     to_return = NULL;
+                  }
+               }
             }
          }
-         return NULL;
+         return to_return;
       }
 
    private:
@@ -1090,14 +1103,7 @@ public:
 
     /// Inserts this instruction into the writeback stage of the pipeline
     /// Returns true if successful, false if there is an instruction blocking
-    bool writebackInst(warp_inst_t &inst) {
-      if (m_next_wb.empty()) {
-        m_next_wb = inst;
-      } else if (m_next_wb.m_uid != inst.m_uid) {
-        return false; // WB reg full
-      }
-      return true;
-    }
+    bool writebackInst(warp_inst_t &inst);
 
     // accessors
     virtual unsigned clock_multiplier() const;

@@ -1777,6 +1777,7 @@ void ldst_unit::writeback()
             break;
         case 3: // global/local
             if( m_next_global ) {
+                panic("This should never execute in gem5-gpu! Writebacks from CudaCore must occur with writebackInst()!");
                 m_next_wb = m_next_global->get_inst();
                 if( m_next_global->isatomic() ) 
                     m_core->decrement_atomic_count(m_next_global->get_wid(),m_next_global->get_access_warp_mask().count());
@@ -1802,6 +1803,16 @@ void ldst_unit::writeback()
     if (serviced_client != (unsigned)-1) {
         m_writeback_arb = (serviced_client + 1) % m_num_writeback_clients; 
     }
+}
+
+bool ldst_unit::writebackInst(warp_inst_t &inst)
+{
+    if (m_next_wb.empty()) {
+        m_next_wb = inst;
+    } else if (m_next_wb.get_uid() != inst.get_uid()) {
+        return false; // WB reg full
+    }
+    return true;
 }
 
 unsigned ldst_unit::clock_multiplier() const
