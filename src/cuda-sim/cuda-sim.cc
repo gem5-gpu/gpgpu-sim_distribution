@@ -1521,7 +1521,7 @@ kernel_info_t *gpgpu_opencl_ptx_sim_init_grid(class function_info *entry,
    return result;
 }
 
-#include "../../version"
+#include "../version"
 
 void print_splash()
 {
