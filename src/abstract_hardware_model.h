@@ -28,11 +28,6 @@
 #ifndef ABSTRACT_HARDWARE_MODEL_INCLUDED
 #define ABSTRACT_HARDWARE_MODEL_INCLUDED
 
-
-// Forward declarations
-class gpgpu_sim;
-class kernel_info_t;
-
 enum _memory_space_t {
    undefined_space=0,
    reg_space,
@@ -66,6 +61,10 @@ enum FuncCache
 typedef unsigned long long new_addr_type;
 typedef new_addr_type address_type;
 typedef new_addr_type addr_t;
+
+// Forward declarations
+class gpgpu_sim;
+class kernel_info_t;
 
 // the following are operations the timing model can see 
 
