@@ -357,7 +357,7 @@ void add_identifier( const char *identifier, int array_dim, unsigned array_ident
    int basic_type;
    int regnum;
    size_t num_bits;
-   unsigned addr_pad;
+   address_type addr_pad;
    new_addr_type addr;
    ti.type_decode(num_bits,basic_type);
 

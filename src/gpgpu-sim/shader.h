@@ -914,7 +914,7 @@ private:
 };
 
 struct insn_latency_info {
-   unsigned pc;
+   address_type pc;
    unsigned long latency;
 };
 

@@ -321,7 +321,7 @@ void warp_inst_t::generate_mem_accesses()
             if( !active(thread) ) 
                 continue;
             new_addr_type addr = m_per_scalar_thread[thread].memreqaddr[0];
-            unsigned block_address = line_size_based_tag_func(addr,cache_block_size);
+            new_addr_type block_address = line_size_based_tag_func(addr,cache_block_size);
             accesses[block_address].set(thread);
             unsigned idx = addr-block_address; 
             for( unsigned i=0; i < data_size; i++ ) 
@@ -374,7 +374,7 @@ void warp_inst_t::memory_coalescing_arch_13( bool is_write, mem_access_type acce
 
             for(unsigned access=0; access<num_accesses; access++) {
                 new_addr_type addr = m_per_scalar_thread[thread].memreqaddr[access];
-                unsigned block_address = line_size_based_tag_func(addr,segment_size);
+                new_addr_type block_address = line_size_based_tag_func(addr,segment_size);
                 unsigned chunk = (addr&127)/32; // which 32-byte chunk within in a 128-byte chunk does this thread access?
                 transaction_info &info = subwarp_transactions[block_address];
 

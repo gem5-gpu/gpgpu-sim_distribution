@@ -2199,7 +2199,7 @@ void ld_exec( const ptx_instruction *pI, ptx_thread_info *thread )
    unsigned vector_spec = pI->get_vector();
 
    memory_space *mem = NULL;
-   addr_t addr = src1_data.u32;
+   addr_t addr = src1_data.u64;
 
    decode_space(space,thread,src1,mem,addr);
 
@@ -3560,7 +3560,7 @@ void st_impl( const ptx_instruction *pI, ptx_thread_info *thread )
    unsigned vector_spec = pI->get_vector();
 
    memory_space *mem = NULL;
-   addr_t addr = addr_reg.u32;
+   addr_t addr = addr_reg.u64;
 
    decode_space(space,thread,dst,mem,addr);
 
@@ -3803,7 +3803,7 @@ void tex_impl( const ptx_instruction *pI, ptx_thread_info *thread )
    float x_f32,  y_f32;
    size_t size;
    int t;
-   unsigned tex_array_base;
+   unsigned long long tex_array_base;
    unsigned int width = 0, height = 0;
    int x = 0;
    int y = 0;
@@ -3811,7 +3811,7 @@ void tex_impl( const ptx_instruction *pI, ptx_thread_info *thread )
    float alpha=0, beta=0;
 
    type_info_key::type_decode(to_type,size,t);
-   tex_array_base = cuArray->devPtr32;
+   tex_array_base = (unsigned long long)cuArray->devPtr;
 
    switch (dimension) {
    case GEOM_MODIFIER_1D:

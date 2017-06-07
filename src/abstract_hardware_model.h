@@ -64,8 +64,8 @@ enum FuncCache
 #include <stdio.h>
 
 typedef unsigned long long new_addr_type;
-typedef unsigned address_type;
-typedef unsigned addr_t;
+typedef new_addr_type address_type;
+typedef new_addr_type addr_t;
 
 // the following are operations the timing model can see 
 
@@ -715,7 +715,7 @@ public:
     bool valid() const { return m_decoded; }
     virtual void print_insn( FILE *fp ) const 
     {
-        fprintf(fp," [inst @ pc=0x%04x] ", pc );
+        fprintf(fp," [inst @ pc=0x%04llx] ", pc );
     }
     bool is_load() const { return (op == LOAD_OP || memory_op == memory_load); }
     bool is_store() const { return (op == STORE_OP || memory_op == memory_store); }
@@ -875,7 +875,7 @@ public:
     // accessors
     virtual void print_insn(FILE *fp) const 
     {
-        fprintf(fp," [inst @ pc=0x%04x] ", pc );
+        fprintf(fp," [inst @ pc=0x%04llx] ", pc );
         for (int i=(int)m_config->warp_size-1; i>=0; i--)
             fprintf(fp, "%c", ((m_warp_active_mask[i])?'1':'0') );
     }
